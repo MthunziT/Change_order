@@ -1,0 +1,71 @@
+﻿@using Change_order.Models
+@using Change_order.Services
+@model LoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Sign In";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — Change Order System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="brand-icon large">⬡</span>
+                <h1>CHANGE<strong>ORDER</strong></h1>
+                <p>IT Change Management System</p>
+            </div>
+
+            <form asp-action="Login" method="post" class="login-form">
+                <input type="hidden" name="ReturnUrl" value="@ViewData["ReturnUrl"]" />
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+                <div class="form-group">
+                    <label asp-for="Email">Email Address</label>
+                    <input asp-for="Email" class="form-input" placeholder="you@company.com" autocomplete="email" />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" class="form-input" placeholder="••••••••" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <button type="submit" class="btn-primary full-width">Sign In</button>
+            </form>
+
+            <div class="login-demo">
+                <p class="demo-label">Demo Credentials</p>
+                <div class="demo-grid">
+                    <div class="demo-item">
+                        <span class="demo-role developer">Developer</span>
+                        <code>dev@company.com</code>
+                        <code>Dev@1234!</code>
+                    </div>
+                    <div class="demo-item">
+                        <span class="demo-role manager1">Manager 1</span>
+                        <code>manager1@company.com</code>
+                        <code>Mgr@1234!</code>
+                    </div>
+                    <div class="demo-item">
+                        <span class="demo-role manager2">Manager 2</span>
+                        <code>manager2@company.com</code>
+                        <code>Mgr@1234!</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

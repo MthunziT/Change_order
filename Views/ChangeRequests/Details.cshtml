@@ -1,0 +1,241 @@
+﻿@using Change_order.Models
+@using Change_order.Services
+@model ChangeRequest
+@{
+    ViewData["Title"] = $"CR {Model.CRId}";
+    var crService = (IChangeRequestService)ViewBag.CrService;
+    var currentUser = (ApplicationUser)ViewBag.CurrentUser;
+    bool canApproveM1 = currentUser.Role == UserRole.Manager1 && Model.Status == ChangeRequestStatus.Pending;
+    bool canApproveM2 = currentUser.Role == UserRole.Manager2 && Model.Status == ChangeRequestStatus.Manager1Approved;
+    bool canApprove = canApproveM1 || canApproveM2;
+    bool canMarkDeployed = currentUser.Role is UserRole.Developer or UserRole.Admin && crService.IsDeploymentAllowed(Model);
+    bool canDownloadPdf = Model.Status == ChangeRequestStatus.Manager2Approved || Model.Status == ChangeRequestStatus.Deployed;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@Model.CRId</h1>
+        <p class="page-subtitle">@Model.Name</p>
+    </div>
+    <div class="header-actions">
+        @if (canDownloadPdf)
+        {
+            <a href="/ChangeRequests/DownloadPdf/@Model.Id" class="btn-secondary">⬇ Download PDF</a>
+        }
+        <a href="/Dashboard" class="btn-secondary">← Back</a>
+    </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+    <div class="status-step @(Model.Status >= ChangeRequestStatus.Pending ? "done" : "")">
+        <div class="step-dot"></div>
+        <span>Submitted</span>
+    </div>
+    <div class="status-line @(Model.Status >= ChangeRequestStatus.Manager1Approved ? "done" : "")"></div>
+    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected ? "rejected" : Model.Status >= ChangeRequestStatus.Manager1Approved ? "done" : "")">
+        <div class="step-dot"></div>
+        <span>Manager 1</span>
+    </div>
+    <div class="status-line @(Model.Status >= ChangeRequestStatus.Manager2Approved ? "done" : "")"></div>
+    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected ? "rejected" : Model.Status >= ChangeRequestStatus.Manager2Approved ? "done" : "")">
+        <div class="step-dot"></div>
+        <span>Manager 2</span>
+    </div>
+    <div class="status-line @(Model.Status == ChangeRequestStatus.Deployed ? "done" : "")"></div>
+    <div class="status-step @(Model.Status == ChangeRequestStatus.Deployed ? "done" : "")">
+        <div class="step-dot"></div>
+        <span>Deployed</span>
+    </div>
+</div>
+
+<div class="details-grid">
+    <!-- Left: CR Info -->
+    <div class="details-main">
+
+        <div class="detail-section">
+            <h3 class="detail-section-title">Change Details</h3>
+            <dl class="detail-list">
+                <dt>Application</dt>
+                <dd>@Model.ApplicationName</dd>
+                <dt>Category</dt>
+                <dd>@Model.Category</dd>
+                <dt>Priority</dt>
+                <dd><span class="badge @crService.GetPriorityBadgeClass(Model.Priority)">@Model.Priority</span></dd>
+                <dt>Impact</dt>
+                <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Impact</span></dd>
+                <dt>Environment</dt>
+                <dd>@Model.Environment</dd>
+                <dt>Developer</dt>
+                <dd>@Model.DeveloperName</dd>
+                <dt>Date Submitted</dt>
+                <dd>@Model.DateSubmitted.ToString("dd MMM yyyy HH:mm")</dd>
+            </dl>
+        </div>
+
+        <div class="detail-section">
+            <h3 class="detail-section-title">Description</h3>
+            <p class="detail-text">@Model.Description</p>
+        </div>
+
+        <div class="detail-section">
+            <h3 class="detail-section-title">Business Justification</h3>
+            <p class="detail-text">@Model.BusinessJustification</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ImpactDescription))
+        {
+            <div class="detail-section">
+                <h3 class="detail-section-title">Impact Description</h3>
+                <p class="detail-text">@Model.ImpactDescription</p>
+            </div>
+        }
+
+        <div class="detail-section">
+            <h3 class="detail-section-title">Deployment Plan</h3>
+            <dl class="detail-list">
+                <dt>Planned Date</dt>
+                <dd>@Model.DeploymentDate.ToString("dd MMM yyyy")</dd>
+                <dt>Window</dt>
+                <dd>@(Model.DeploymentWindow ?? "—")</dd>
+                <dt>Rollback Plan</dt>
+                <dd>@(Model.RollbackPlan ?? "—")</dd>
+                <dt>Test Plan</dt>
+                <dd>@(Model.TestPlan ?? "—")</dd>
+            </dl>
+        </div>
+
+        @if (Model.Status == ChangeRequestStatus.Rejected)
+        {
+            <div class="detail-section rejection-section">
+                <h3 class="detail-section-title">Rejection Details</h3>
+                <dl class="detail-list">
+                    <dt>Rejected By</dt>
+                    <dd>@Model.RejectedByName</dd>
+                    <dt>Date</dt>
+                    <dd>@Model.RejectedAt?.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dt>Reason</dt>
+                    <dd class="rejection-reason">@Model.RejectionReason</dd>
+                </dl>
+            </div>
+        }
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div class="details-sidebar">
+
+        <!-- Deployment status -->
+        <div class="sidebar-card @(crService.IsDeploymentAllowed(Model) ? "card-allowed" : Model.Status == ChangeRequestStatus.Deployed ? "card-deployed" : "card-blocked")">
+            <div class="card-icon">
+                @(Model.Status == ChangeRequestStatus.Deployed ? "🚀" : crService.IsDeploymentAllowed(Model) ? "✅" : "🔒")
+            </div>
+            <div class="card-text">
+                <strong>@(Model.Status == ChangeRequestStatus.Deployed ? "Deployed" : crService.IsDeploymentAllowed(Model) ? "Deployment Allowed" : "Deployment Blocked")</strong>
+                <small>@(crService.IsDeploymentAllowed(Model) ? "All approvals received" : $"Status: {Model.Status}")</small>
+            </div>
+        </div>
+
+        <!-- Jenkins snippet -->
+        <div class="sidebar-card card-code">
+            <h4>Jenkins Integration</h4>
+            <code class="code-block">
+                CR_ID=@Model.CRId
+            </code>
+            <p class="code-hint">Pass this ID to your Jenkins pipeline to gate deployment on approval status.</p>
+        </div>
+
+        <!-- Approval trail -->
+        <div class="sidebar-card">
+            <h4>Approval Trail</h4>
+            <div class="approval-trail">
+                <div class="trail-item @(Model.Manager1ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && string.IsNullOrEmpty(Model.Manager1Name) ? "trail-rejected" : "trail-pending")">
+                    <div class="trail-icon">@(Model.Manager1ApprovedAt.HasValue ? "✓" : "○")</div>
+                    <div>
+                        <strong>Manager 1</strong>
+                        @if (Model.Manager1ApprovedAt.HasValue)
+                        {
+                            <small>@Model.Manager1Name · @Model.Manager1ApprovedAt?.ToString("dd MMM HH:mm")</small>
+                            if (!string.IsNullOrEmpty(Model.Manager1Comments))
+                            {
+                                <em>"@Model.Manager1Comments"</em>
+                            }
+                        }
+                        else
+                        {
+
+                            <small>Awaiting approval</small>
+                        }
+                    </div>
+                </div>
+                <div class="trail-connector"></div>
+                <div class="trail-item @(Model.Manager2ApprovedAt.HasValue ? "trail-done" : "trail-pending")">
+                    <div class="trail-icon">@(Model.Manager2ApprovedAt.HasValue ? "✓" : "○")</div>
+                    <div>
+                        <strong>Manager 2</strong>
+                        @if (Model.Manager2ApprovedAt.HasValue)
+                        {
+                            <small>@Model.Manager2Name · @Model.Manager2ApprovedAt?.ToString("dd MMM HH:mm")</small>
+                            if (!string.IsNullOrEmpty(Model.Manager2Comments))
+                            {
+                                <em>"@Model.Manager2Comments"</em>
+                            }
+                        }
+                        else
+                        {
+
+                            <small>Awaiting approval</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve/Reject Actions -->
+        @if (canApprove)
+        {
+            <div class="sidebar-card card-action">
+                <h4>Your Action Required</h4>
+                <form asp-action="ProcessApproval" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
+                    <input type="hidden" name="CRId" value="@Model.CRId" />
+                    <div class="form-group">
+                        <label>Comments</label>
+                        <textarea name="Comments" class="form-input" rows="3" placeholder="Optional approval comments..."></textarea>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" name="Approved" value="true" class="btn-approve">✓ Approve</button>
+                        <button type="button" class="btn-reject" onclick="toggleReject()">✕ Reject</button>
+                    </div>
+                    <div id="rejectPanel" style="display:none" class="reject-panel">
+                        <label>Rejection Reason *</label>
+                        <textarea name="RejectionReason" class="form-input" rows="2" placeholder="State reason for rejection..."></textarea>
+                        <button type="submit" name="Approved" value="false" class="btn-reject-confirm">Confirm Rejection</button>
+                    </div>
+                </form>
+            </div>
+        }
+
+        @if (canMarkDeployed)
+        {
+            <div class="sidebar-card card-action">
+                <form asp-action="MarkDeployed" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn-deploy full-width" onclick="return confirm('Mark this change request as deployed?')">
+                        🚀 Mark as Deployed
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleReject() {
+            const panel = document.getElementById('rejectPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+}

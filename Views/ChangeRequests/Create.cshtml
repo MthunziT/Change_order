@@ -1,0 +1,140 @@
+﻿@using Change_order.Models
+@using Change_order.Services
+@model ChangeRequest
+@{
+    ViewData["Title"] = "New Change Request";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">New Change Request</h1>
+        <p class="page-subtitle">Submit a new change for review and approval</p>
+    </div>
+    <a href="/Dashboard" class="btn-secondary">← Back</a>
+</div>
+
+<form asp-action="Create" method="post" class="cr-form">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+    <div class="form-sections">
+
+        <!-- Section 1: Core Details -->
+        <div class="form-section">
+            <div class="section-header">
+                <span class="section-num">01</span>
+                <h2>Change Details</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-group col-2">
+                    <label asp-for="Name">Change Request Name *</label>
+                    <input asp-for="Name" class="form-input" placeholder="e.g. Payment Gateway Upgrade v3.0" />
+                    <span asp-validation-for="Name" class="field-error"></span>
+                </div>
+                <div class="form-group col-2">
+                    <label asp-for="ApplicationName">Application / System *</label>
+                    <select asp-for="ApplicationName" class="form-input">
+                        <option value="">Select application...</option>
+                        <option>Payment System</option>
+                        <option>Late Appeal System</option>
+                        <option>Valuation</option>
+                        <option>HR Management System</option>
+                        <option>Finance Portal</option>
+                        <option>Reporting Dashboard</option>
+                        <option>Objections</option>
+                        <option>Authentication Service</option>
+                        <option>Other</option>
+                    </select>
+                    <span asp-validation-for="ApplicationName" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="Category">Category *</label>
+                    <select asp-for="Category" class="form-input" asp-items="Html.GetEnumSelectList<ChangeCategory>()">
+                        <option value="">Select...</option>
+                    </select>
+                    <span asp-validation-for="Category" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="Priority">Priority *</label>
+                    <select asp-for="Priority" class="form-input" asp-items="Html.GetEnumSelectList<Priority>()">
+                        <option value="">Select...</option>
+                    </select>
+                    <span asp-validation-for="Priority" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="Impact">Impact Level *</label>
+                    <select asp-for="Impact" class="form-input" asp-items="Html.GetEnumSelectList<ImpactLevel>()">
+                        <option value="">Select...</option>
+                    </select>
+                    <span asp-validation-for="Impact" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="Environment">Environment</label>
+                    <select asp-for="Environment" class="form-input">
+                        <option>Production</option>
+                        <option>Staging</option>
+                        <option>UAT</option>
+                        <option>Development</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Description -->
+        <div class="form-section">
+            <div class="section-header">
+                <span class="section-num">02</span>
+                <h2>Description & Justification</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-group col-2">
+                    <label asp-for="Description">Description *</label>
+                    <textarea asp-for="Description" class="form-input" rows="4" placeholder="Describe what changes will be made..."></textarea>
+                    <span asp-validation-for="Description" class="field-error"></span>
+                </div>
+                <div class="form-group col-2">
+                    <label asp-for="BusinessJustification">Business Justification *</label>
+                    <textarea asp-for="BusinessJustification" class="form-input" rows="3" placeholder="Why is this change necessary?"></textarea>
+                    <span asp-validation-for="BusinessJustification" class="field-error"></span>
+                </div>
+                <div class="form-group col-2">
+                    <label asp-for="ImpactDescription">Impact Description</label>
+                    <input asp-for="ImpactDescription" class="form-input" placeholder="What systems/users will be affected?" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Deployment -->
+        <div class="form-section">
+            <div class="section-header">
+                <span class="section-num">03</span>
+                <h2>Deployment Plan</h2>
+            </div>
+            <div class="form-grid">
+                <div class="form-group col-1">
+                    <label asp-for="DeploymentDate">Deployment Date *</label>
+                    <input asp-for="DeploymentDate" type="date" class="form-input" />
+                    <span asp-validation-for="DeploymentDate" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="DeploymentWindow">Deployment Window</label>
+                    <input asp-for="DeploymentWindow" class="form-input" placeholder="e.g. 22:00 - 02:00" />
+                </div>
+                <div class="form-group col-2">
+                    <label asp-for="RollbackPlan">Rollback Plan</label>
+                    <textarea asp-for="RollbackPlan" class="form-input" rows="2" placeholder="Steps to revert if deployment fails..."></textarea>
+                </div>
+                <div class="form-group col-2">
+                    <label asp-for="TestPlan">Test Plan</label>
+                    <textarea asp-for="TestPlan" class="form-input" rows="2" placeholder="How will you verify the change was successful?"></textarea>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="form-actions">
+        <a href="/Dashboard" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">Submit Change Request</button>
+    </div>
+</form>

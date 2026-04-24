@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? $"{ViewData["Title"]} — " : "")Change Order System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <span class="brand-icon">⬡</span>
+                <span class="brand-text">CHANGE<strong>ORDER</strong></span>
+            </div>
+            <div class="navbar-links">
+                <a href="/Dashboard" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    Dashboard
+                </a>
+                <a href="/ChangeRequests/Create" class="nav-link nav-link-cta">+ New CR</a>
+            </div>
+            <div class="navbar-user">
+                <span class="user-name">@User.Identity.Name?.Split('\\').LastOrDefault()</span>
+                <form method="post" action="/Account/Logout" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-logout">Sign out</button>
+                </form>
+            </div>
+        </nav>
+    }
+
+    <main class="main-content">
+        @if (TempData["Success"] != null)
+        {
+            <div class="toast toast-success">✓ &nbsp;@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="toast toast-error">✕ &nbsp;@TempData["Error"]</div>
+        }
+
+        @RenderBody()
+    </main>
+
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
