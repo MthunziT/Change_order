@@ -1,4 +1,4 @@
-using Change_order.Data;
+﻿using Change_order.Data;
 using Change_order.Models;
 using iText.Kernel.Colors;
 using iText.Kernel.Font;
@@ -82,66 +82,88 @@ namespace Change_order.Services
             var bodyFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
             var boldFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA_BOLD);
 
-            var navy = new DeviceRgb(0, 32, 91);
-            var lightGray = new DeviceRgb(245, 245, 245);
-            var darkGray = new DeviceRgb(50, 50, 50);
-            var green = new DeviceRgb(0, 128, 64);
+            // ── Gold & Black palette ──────────────────────────────────────────
+            var black = new DeviceRgb(0, 0, 0);
+            var darkGray = new DeviceRgb(26, 26, 26); 
+            var gold = new DeviceRgb(230, 176, 0);   
+            var goldDark = new DeviceRgb(180, 138, 0);   
+            var goldLight = new DeviceRgb(255, 245, 200); 
+            var goldPale = new DeviceRgb(252, 248, 230);  
+            var white = ColorConstants.WHITE;
+            var lightBorder = new DeviceRgb(220, 200, 120);  
+                                                             
 
-            // Header block
+            // ── HEADER ───────────────────────────────────────────────────────
             var headerTable = new Table(UnitValue.CreatePercentArray(new float[] { 70, 30 }))
                 .UseAllAvailableWidth()
                 .SetMarginBottom(16);
 
+            // Left: black background, gold text
             var titleCell = new Cell()
                 .SetBorder(Border.NO_BORDER)
-                .SetBackgroundColor(navy)
-                .SetPadding(14);
+                .SetBackgroundColor(black)
+                .SetPadding(16);
             titleCell.Add(new Paragraph("CHANGE REQUEST FORM")
-                .SetFont(titleFont).SetFontSize(16).SetFontColor(ColorConstants.WHITE));
-            titleCell.Add(new Paragraph("Information Technology Department")
-                .SetFont(bodyFont).SetFontSize(9).SetFontColor(new DeviceRgb(180, 200, 230)));
+                .SetFont(titleFont).SetFontSize(16).SetFontColor(gold));
+            titleCell.Add(new Paragraph("COJ Property Branch")
+                .SetFont(bodyFont).SetFontSize(9).SetFontColor(new DeviceRgb(180, 150, 80)));
 
+            // Right: gold background, black text
             var crIdCell = new Cell()
                 .SetBorder(Border.NO_BORDER)
-                .SetBackgroundColor(new DeviceRgb(230, 240, 255))
+                .SetBackgroundColor(gold)
                 .SetPadding(14)
                 .SetTextAlignment(TextAlignment.CENTER);
-            crIdCell.Add(new Paragraph("CR NUMBER").SetFont(boldFont).SetFontSize(8).SetFontColor(navy));
-            crIdCell.Add(new Paragraph(cr.CRId).SetFont(titleFont).SetFontSize(22).SetFontColor(navy));
+            crIdCell.Add(new Paragraph("CR NUMBER")
+                .SetFont(boldFont).SetFontSize(8).SetFontColor(black));
+            crIdCell.Add(new Paragraph(cr.CRId)
+                .SetFont(titleFont).SetFontSize(24).SetFontColor(black));
             crIdCell.Add(new Paragraph($"Status: {cr.Status.ToString().ToUpper()}")
-                .SetFont(boldFont).SetFontSize(8).SetFontColor(cr.Status == ChangeRequestStatus.Manager2Approved ? green : darkGray));
+                .SetFont(boldFont).SetFontSize(8)
+                .SetFontColor(cr.Status == ChangeRequestStatus.Manager2Approved
+                    ? new DeviceRgb(0, 80, 0)
+                    : darkGray));
 
             headerTable.AddCell(titleCell);
             headerTable.AddCell(crIdCell);
             doc.Add(headerTable);
 
-            // Section helper
+            // ── SECTION HEADING helper ────────────────────────────────────────
             void AddSection(string title)
             {
                 doc.Add(new Paragraph(title)
                     .SetFont(boldFont).SetFontSize(10)
-                    .SetFontColor(ColorConstants.WHITE)
-                    .SetBackgroundColor(navy)
-                    .SetPadding(5).SetMarginTop(10).SetMarginBottom(4));
+                    .SetFontColor(black)
+                    .SetBackgroundColor(gold)
+                    .SetPadding(6)
+                    .SetMarginTop(12)
+                    .SetMarginBottom(0));
             }
 
+            // ── TABLE ROW helper ──────────────────────────────────────────────
             void AddRow(Table t, string label, string value)
             {
-                var labelCell = new Cell().SetBackgroundColor(lightGray)
-                    .SetBorder(new SolidBorder(new DeviceRgb(200, 200, 200), 0.5f))
-                    .SetPadding(5);
-                labelCell.Add(new Paragraph(label).SetFont(boldFont).SetFontSize(9).SetFontColor(navy));
+                // Label cell — pale gold background
+                var labelCell = new Cell()
+                    .SetBackgroundColor(goldPale)
+                    .SetBorder(new SolidBorder(lightBorder, 0.5f))
+                    .SetPadding(6);
+                labelCell.Add(new Paragraph(label)
+                    .SetFont(boldFont).SetFontSize(9).SetFontColor(goldDark));
 
+                // Value cell — white background
                 var valueCell = new Cell()
-                    .SetBorder(new SolidBorder(new DeviceRgb(200, 200, 200), 0.5f))
-                    .SetPadding(5);
-                valueCell.Add(new Paragraph(value ?? "-").SetFont(bodyFont).SetFontSize(9));
+                    .SetBackgroundColor(white)
+                    .SetBorder(new SolidBorder(lightBorder, 0.5f))
+                    .SetPadding(6);
+                valueCell.Add(new Paragraph(value ?? "-")
+                    .SetFont(bodyFont).SetFontSize(9).SetFontColor(black));
 
                 t.AddCell(labelCell);
                 t.AddCell(valueCell);
             }
 
-            // General info
+            // ── SECTION 1 ────────────────────────────────────────────────────
             AddSection("1. CHANGE REQUEST DETAILS");
             var t1 = new Table(UnitValue.CreatePercentArray(new float[] { 35, 65 })).UseAllAvailableWidth();
             AddRow(t1, "Change Request Name", cr.Name);
@@ -154,6 +176,7 @@ namespace Change_order.Services
             AddRow(t1, "Developer", cr.DeveloperName);
             doc.Add(t1);
 
+            // ── SECTION 2 ────────────────────────────────────────────────────
             AddSection("2. DESCRIPTION & JUSTIFICATION");
             var t2 = new Table(UnitValue.CreatePercentArray(new float[] { 35, 65 })).UseAllAvailableWidth();
             AddRow(t2, "Description", cr.Description);
@@ -161,6 +184,7 @@ namespace Change_order.Services
             AddRow(t2, "Impact Description", cr.ImpactDescription ?? "-");
             doc.Add(t2);
 
+            // ── SECTION 3 ────────────────────────────────────────────────────
             AddSection("3. DEPLOYMENT PLAN");
             var t3 = new Table(UnitValue.CreatePercentArray(new float[] { 35, 65 })).UseAllAvailableWidth();
             AddRow(t3, "Planned Deployment Date", cr.DeploymentDate.ToString("dd MMM yyyy"));
@@ -169,24 +193,37 @@ namespace Change_order.Services
             AddRow(t3, "Test Plan", cr.TestPlan ?? "-");
             doc.Add(t3);
 
+            // ── SECTION 4: APPROVAL TRAIL ────────────────────────────────────
             AddSection("4. APPROVAL TRAIL");
-            var t4 = new Table(UnitValue.CreatePercentArray(new float[] { 25, 25, 25, 25 })).UseAllAvailableWidth();
+            var t4 = new Table(UnitValue.CreatePercentArray(new float[] { 25, 25, 25, 25 }))
+                .UseAllAvailableWidth();
 
-            var headers = new[] { "Approver", "Name", "Date", "Comments" };
-            foreach (var h in headers)
+            // Column headers — dark background, gold text
+            foreach (var h in new[] { "Approver", "Name", "Date", "Comments" })
             {
-                var hc = new Cell().SetBackgroundColor(new DeviceRgb(220, 230, 245))
-                    .SetBorder(new SolidBorder(new DeviceRgb(180, 180, 180), 0.5f)).SetPadding(5);
-                hc.Add(new Paragraph(h).SetFont(boldFont).SetFontSize(9).SetFontColor(navy));
+                var hc = new Cell()
+                    .SetBackgroundColor(darkGray)
+                    .SetBorder(new SolidBorder(lightBorder, 0.5f))
+                    .SetPadding(6);
+                hc.Add(new Paragraph(h).SetFont(boldFont).SetFontSize(9).SetFontColor(gold));
                 t4.AddCell(hc);
             }
 
             void AddApprovalRow(string role, string? name, DateTime? date, string? comments)
             {
+                bool isApproved = date.HasValue;
+                var rowBg = isApproved ? goldLight : white;
+
                 foreach (var val in new[] { role, name ?? "Pending", date?.ToString("dd MMM yyyy") ?? "-", comments ?? "-" })
                 {
-                    var c = new Cell().SetBorder(new SolidBorder(new DeviceRgb(200, 200, 200), 0.5f)).SetPadding(5);
-                    c.Add(new Paragraph(val).SetFont(bodyFont).SetFontSize(9));
+                    var c = new Cell()
+                        .SetBackgroundColor(rowBg)
+                        .SetBorder(new SolidBorder(lightBorder, 0.5f))
+                        .SetPadding(6);
+                    c.Add(new Paragraph(val)
+                        .SetFont(isApproved ? boldFont : bodyFont)
+                        .SetFontSize(9)
+                        .SetFontColor(isApproved ? goldDark : new DeviceRgb(100, 100, 100)));
                     t4.AddCell(c);
                 }
             }
@@ -195,10 +232,13 @@ namespace Change_order.Services
             AddApprovalRow("Manager 2", cr.Manager2Name, cr.Manager2ApprovedAt, cr.Manager2Comments);
             doc.Add(t4);
 
-            // Footer
-            doc.Add(new Paragraph($"\nGenerated: {DateTime.Now:dd MMM yyyy HH:mm} | Change Order Management System | CONFIDENTIAL")
-                .SetFont(bodyFont).SetFontSize(7).SetFontColor(new DeviceRgb(150, 150, 150))
-                .SetTextAlignment(TextAlignment.CENTER).SetMarginTop(20));
+            // ── FOOTER ───────────────────────────────────────────────────────
+            doc.Add(new Paragraph(
+                    $"\nGenerated: {DateTime.Now:dd MMM yyyy HH:mm}  |  Change Order Management System  |  CONFIDENTIAL")
+                .SetFont(bodyFont).SetFontSize(7)
+                .SetFontColor(new DeviceRgb(150, 130, 60))
+                .SetTextAlignment(TextAlignment.CENTER)
+                .SetMarginTop(20));
 
             doc.Close();
             return ms.ToArray();

@@ -60,7 +60,8 @@ namespace Change_order.Services
         private static UserRole MapRole(string roleName) => roleName.ToLower() switch
         {
             "admin" => UserRole.Admin,
-            "manager" => UserRole.Manager2,
+            "manager1" => UserRole.Manager1,
+            "manager2" => UserRole.Manager2,
             "developer" => UserRole.Developer,
             _ => UserRole.Developer
         };

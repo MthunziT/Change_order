@@ -8,8 +8,10 @@
     bool canApproveM1 = currentUser.Role == UserRole.Manager1 && Model.Status == ChangeRequestStatus.Pending;
     bool canApproveM2 = currentUser.Role == UserRole.Manager2 && Model.Status == ChangeRequestStatus.Manager1Approved;
     bool canApprove = canApproveM1 || canApproveM2;
-    bool canMarkDeployed = currentUser.Role is UserRole.Developer or UserRole.Admin && crService.IsDeploymentAllowed(Model);
-    bool canDownloadPdf = Model.Status == ChangeRequestStatus.Manager2Approved || Model.Status == ChangeRequestStatus.Deployed;
+    bool canMarkDeployed = (currentUser.Role == UserRole.Developer || currentUser.Role == UserRole.Admin)
+                           && crService.IsDeploymentAllowed(Model);
+    bool canDownloadPdf = Model.Status == ChangeRequestStatus.Manager2Approved
+                          || Model.Status == ChangeRequestStatus.Deployed;
 }
 
 <div class="page-header">
@@ -28,17 +30,17 @@
 
 <!-- Status Bar -->
 <div class="status-bar">
-    <div class="status-step @(Model.Status >= ChangeRequestStatus.Pending ? "done" : "")">
+    <div class="status-step done">
         <div class="step-dot"></div>
         <span>Submitted</span>
     </div>
     <div class="status-line @(Model.Status >= ChangeRequestStatus.Manager1Approved ? "done" : "")"></div>
-    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected ? "rejected" : Model.Status >= ChangeRequestStatus.Manager1Approved ? "done" : "")">
+    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null ? "rejected" : Model.Status >= ChangeRequestStatus.Manager1Approved ? "done" : "")">
         <div class="step-dot"></div>
         <span>Manager 1</span>
     </div>
     <div class="status-line @(Model.Status >= ChangeRequestStatus.Manager2Approved ? "done" : "")"></div>
-    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected ? "rejected" : Model.Status >= ChangeRequestStatus.Manager2Approved ? "done" : "")">
+    <div class="status-step @(Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null ? "rejected" : Model.Status >= ChangeRequestStatus.Manager2Approved ? "done" : "")">
         <div class="step-dot"></div>
         <span>Manager 2</span>
     </div>
@@ -49,35 +51,72 @@
     </div>
 </div>
 
+<!-- ACTION BANNER — shown only when manager action is needed -->
+@if (canApprove)
+{
+    <div style="background:linear-gradient(135deg,#e6b000,#d4a300);border-radius:12px;padding:18px 24px;
+                    margin-bottom:24px;display:flex;align-items:center;gap:16px;
+                    box-shadow:0 4px 20px rgba(230,176,0,0.35)">
+        <span style="font-size:2rem">⚡</span>
+        <div>
+            <strong style="font-size:1rem;color:#000">Action Required</strong>
+            <p style="margin:2px 0 0;font-size:0.875rem;color:#1a1a1a">
+                @if (canApproveM1)
+                {
+                    <span>You are <b>Manager 1</b>. This change request is awaiting your approval.</span>
+                }
+                else
+                {
+                    <span>You are <b>Manager 2</b>. Manager 1 has approved. Your final approval is required.</span>
+                }
+            </p>
+        </div>
+    </div>
+}
+
 <div class="details-grid">
-    <!-- Left: CR Info -->
+    <!-- LEFT: Full CR Details -->
     <div class="details-main">
 
+        <!-- Developer Info -->
+        <div class="detail-section" style="border-left:4px solid #e6b000">
+            <h3 class="detail-section-title">Requested By</h3>
+            <dl class="detail-list">
+                <dt>Developer</dt>
+                <dd><strong>@Model.DeveloperName</strong></dd>
+                <dt>Username</dt>
+                <dd>@Model.DeveloperUserId</dd>
+                <dt>Date Submitted</dt>
+                <dd>@Model.DateSubmitted.ToString("dd MMM yyyy HH:mm")</dd>
+                <dt>Current Status</dt>
+                <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Status</span></dd>
+            </dl>
+        </div>
+
+        <!-- Change Details -->
         <div class="detail-section">
             <h3 class="detail-section-title">Change Details</h3>
             <dl class="detail-list">
                 <dt>Application</dt>
                 <dd>@Model.ApplicationName</dd>
+                <dt>Environment</dt>
+                <dd>@Model.Environment</dd>
                 <dt>Category</dt>
                 <dd>@Model.Category</dd>
                 <dt>Priority</dt>
                 <dd><span class="badge @crService.GetPriorityBadgeClass(Model.Priority)">@Model.Priority</span></dd>
                 <dt>Impact</dt>
-                <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Impact</span></dd>
-                <dt>Environment</dt>
-                <dd>@Model.Environment</dd>
-                <dt>Developer</dt>
-                <dd>@Model.DeveloperName</dd>
-                <dt>Date Submitted</dt>
-                <dd>@Model.DateSubmitted.ToString("dd MMM yyyy HH:mm")</dd>
+                <dd>@Model.Impact</dd>
             </dl>
         </div>
 
+        <!-- Description -->
         <div class="detail-section">
             <h3 class="detail-section-title">Description</h3>
             <p class="detail-text">@Model.Description</p>
         </div>
 
+        <!-- Business Justification -->
         <div class="detail-section">
             <h3 class="detail-section-title">Business Justification</h3>
             <p class="detail-text">@Model.BusinessJustification</p>
@@ -91,6 +130,7 @@
             </div>
         }
 
+        <!-- Deployment Plan -->
         <div class="detail-section">
             <h3 class="detail-section-title">Deployment Plan</h3>
             <dl class="detail-list">
@@ -105,10 +145,11 @@
             </dl>
         </div>
 
+        <!-- Rejection Details -->
         @if (Model.Status == ChangeRequestStatus.Rejected)
         {
             <div class="detail-section rejection-section">
-                <h3 class="detail-section-title">Rejection Details</h3>
+                <h3 class="detail-section-title">❌ Rejection Details</h3>
                 <dl class="detail-list">
                     <dt>Rejected By</dt>
                     <dd>@Model.RejectedByName</dd>
@@ -119,123 +160,225 @@
                 </dl>
             </div>
         }
+
+        <!-- APPROVE / REJECT SECTION -->
+        @if (canApprove)
+        {
+            <div class="detail-section card-action" style="border:2px solid #e6b000">
+                <h3 class="detail-section-title">
+                    @if (canApproveM1)
+                    {
+                        <span>Manager 1 — Your Decision</span>
+                    }
+                    else
+                    {
+                        <span>Manager 2 — Your Final Decision</span>
+                    }
+                </h3>
+
+                @if (canApproveM2 && Model.Manager1ApprovedAt.HasValue)
+                {
+                    <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
+                                        padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
+                        ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
+                        @Model.Manager1ApprovedAt?.ToString("dd MMM yyyy HH:mm")
+                        @if (!string.IsNullOrEmpty(Model.Manager1Comments))
+                        {
+                            <span>— "@Model.Manager1Comments"</span>
+                        }
+                    </div>
+                }
+
+                <!-- Shared comments textarea (read by JS before submit) -->
+                <div class="form-group" style="margin-bottom:16px">
+                    <label style="font-size:0.78rem;font-weight:600;text-transform:uppercase;
+                                      letter-spacing:0.07em;color:#6b7280;display:block;margin-bottom:6px">
+                        Comments (optional)
+                    </label>
+                    <textarea id="sharedComments" class="form-input" rows="3"
+                          placeholder="Add any comments about your decision..."></textarea>
+                </div>
+
+                <div class="action-buttons" style="display:flex;gap:10px;margin-bottom:12px">
+
+                    <!-- ✅ APPROVE — its own form, no ambiguity -->
+                    <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
+                        <input type="hidden" name="CRId" value="@Model.CRId" />
+                        <input type="hidden" name="Approved" value="true" />
+                        <input type="hidden" name="Comments" id="approveComments" value="" />
+                        <button type="submit"
+                                class="btn-approve"
+                                style="width:100%;padding:14px;font-size:1rem"
+                                onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
+                            ✓ Approve
+                        </button>
+                    </form>
+
+                    <!-- ✕ REJECT — only shows the panel, does NOT submit -->
+                    <button type="button"
+                            id="showRejectBtn"
+                            class="btn-reject"
+                            style="flex:1;padding:14px;font-size:1rem"
+                            onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
+                        ✕ Reject
+                    </button>
+
+                </div>
+
+                <!-- Reject panel — its own form -->
+                <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #dc3545;
+                                                 border-radius:10px;padding:16px;margin-top:8px">
+                    <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
+                        <input type="hidden" name="CRId" value="@Model.CRId" />
+                        <input type="hidden" name="Approved" value="false" />
+                        <input type="hidden" name="Comments" id="rejectComments" value="" />
+
+                        <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                                          letter-spacing:0.07em;color:#dc3545;display:block;margin-bottom:8px">
+                            ⚠ Rejection Reason (required)
+                        </label>
+                        <textarea name="RejectionReason" class="form-input" rows="3" required
+                              placeholder="Please state clearly why this request is being rejected..."
+                              style="border-color:#dc3545;margin-bottom:12px"></textarea>
+
+                        <div style="display:flex;gap:10px">
+                            <button type="submit"
+                                    class="btn-reject-confirm"
+                                    style="flex:1;padding:12px"
+                                    onclick="document.getElementById('rejectComments').value = document.getElementById('sharedComments').value">
+                                Confirm Rejection
+                            </button>
+                            <button type="button"
+                                    style="flex:1;padding:12px;background:#fff;border:2px solid #6b7280;
+                                               border-radius:10px;cursor:pointer;font-weight:600;color:#6b7280"
+                                    onclick="document.getElementById('rejectPanel').style.display='none';
+                                                 document.getElementById('showRejectBtn').style.display='block'">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        }
+
     </div>
 
-    <!-- Right: Sidebar -->
+    <!-- RIGHT: Sidebar -->
     <div class="details-sidebar">
 
         <!-- Deployment status -->
-        <div class="sidebar-card @(crService.IsDeploymentAllowed(Model) ? "card-allowed" : Model.Status == ChangeRequestStatus.Deployed ? "card-deployed" : "card-blocked")">
+        <div class="sidebar-card @(Model.Status == ChangeRequestStatus.Deployed ? "card-deployed" : crService.IsDeploymentAllowed(Model) ? "card-allowed" : "card-blocked")">
             <div class="card-icon">
                 @(Model.Status == ChangeRequestStatus.Deployed ? "🚀" : crService.IsDeploymentAllowed(Model) ? "✅" : "🔒")
             </div>
             <div class="card-text">
-                <strong>@(Model.Status == ChangeRequestStatus.Deployed ? "Deployed" : crService.IsDeploymentAllowed(Model) ? "Deployment Allowed" : "Deployment Blocked")</strong>
-                <small>@(crService.IsDeploymentAllowed(Model) ? "All approvals received" : $"Status: {Model.Status}")</small>
+                <strong>
+                    @(Model.Status == ChangeRequestStatus.Deployed ? "Deployed"
+                                        : crService.IsDeploymentAllowed(Model) ? "Deployment Allowed"
+                                        : "Deployment Blocked")
+                </strong>
+                <small>
+                    @(crService.IsDeploymentAllowed(Model)
+                                        ? "All approvals received"
+                                        : $"Status: {Model.Status}")
+                </small>
             </div>
         </div>
 
-        <!-- Jenkins snippet -->
-        <div class="sidebar-card card-code">
-            <h4>Jenkins Integration</h4>
-            <code class="code-block">
-                CR_ID=@Model.CRId
-            </code>
-            <p class="code-hint">Pass this ID to your Jenkins pipeline to gate deployment on approval status.</p>
-        </div>
-
-        <!-- Approval trail -->
+        <!-- Approval Trail -->
         <div class="sidebar-card">
             <h4>Approval Trail</h4>
             <div class="approval-trail">
-                <div class="trail-item @(Model.Manager1ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && string.IsNullOrEmpty(Model.Manager1Name) ? "trail-rejected" : "trail-pending")">
-                    <div class="trail-icon">@(Model.Manager1ApprovedAt.HasValue ? "✓" : "○")</div>
+
+                <!-- Manager 1 -->
+                <div class="trail-item @(Model.Manager1ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null ? "trail-rejected" : "trail-pending")">
+                    <div class="trail-icon">
+                        @(Model.Manager1ApprovedAt.HasValue ? "✓" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null ? "✕" : "○")
+                    </div>
                     <div>
                         <strong>Manager 1</strong>
                         @if (Model.Manager1ApprovedAt.HasValue)
                         {
-                            <small>@Model.Manager1Name · @Model.Manager1ApprovedAt?.ToString("dd MMM HH:mm")</small>
+                            <small>@Model.Manager1Name</small>
+                            <small>@Model.Manager1ApprovedAt?.ToString("dd MMM yyyy HH:mm")</small>
                             if (!string.IsNullOrEmpty(Model.Manager1Comments))
                             {
                                 <em>"@Model.Manager1Comments"</em>
                             }
                         }
+                        else if (Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null)
+                        {
+                            <small style="color:#dc3545">Rejected by @Model.RejectedByName</small>
+                        }
                         else
                         {
-
                             <small>Awaiting approval</small>
                         }
                     </div>
                 </div>
+
                 <div class="trail-connector"></div>
-                <div class="trail-item @(Model.Manager2ApprovedAt.HasValue ? "trail-done" : "trail-pending")">
-                    <div class="trail-icon">@(Model.Manager2ApprovedAt.HasValue ? "✓" : "○")</div>
+
+                <!-- Manager 2 -->
+                <div class="trail-item @(Model.Manager2ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null ? "trail-rejected" : "trail-pending")">
+                    <div class="trail-icon">
+                        @(Model.Manager2ApprovedAt.HasValue ? "✓" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null ? "✕" : "○")
+                    </div>
                     <div>
                         <strong>Manager 2</strong>
                         @if (Model.Manager2ApprovedAt.HasValue)
                         {
-                            <small>@Model.Manager2Name · @Model.Manager2ApprovedAt?.ToString("dd MMM HH:mm")</small>
+                            <small>@Model.Manager2Name</small>
+                            <small>@Model.Manager2ApprovedAt?.ToString("dd MMM yyyy HH:mm")</small>
                             if (!string.IsNullOrEmpty(Model.Manager2Comments))
                             {
                                 <em>"@Model.Manager2Comments"</em>
                             }
                         }
+                        else if (Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null)
+                        {
+                            <small style="color:#dc3545">Rejected by @Model.RejectedByName</small>
+                        }
                         else
                         {
-
                             <small>Awaiting approval</small>
                         }
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <!-- Approve/Reject Actions -->
-        @if (canApprove)
-        {
-            <div class="sidebar-card card-action">
-                <h4>Your Action Required</h4>
-                <form asp-action="ProcessApproval" method="post">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
-                    <input type="hidden" name="CRId" value="@Model.CRId" />
-                    <div class="form-group">
-                        <label>Comments</label>
-                        <textarea name="Comments" class="form-input" rows="3" placeholder="Optional approval comments..."></textarea>
-                    </div>
-                    <div class="action-buttons">
-                        <button type="submit" name="Approved" value="true" class="btn-approve">✓ Approve</button>
-                        <button type="button" class="btn-reject" onclick="toggleReject()">✕ Reject</button>
-                    </div>
-                    <div id="rejectPanel" style="display:none" class="reject-panel">
-                        <label>Rejection Reason *</label>
-                        <textarea name="RejectionReason" class="form-input" rows="2" placeholder="State reason for rejection..."></textarea>
-                        <button type="submit" name="Approved" value="false" class="btn-reject-confirm">Confirm Rejection</button>
-                    </div>
-                </form>
-            </div>
-        }
-
+        <!-- Mark as Deployed -->
         @if (canMarkDeployed)
         {
             <div class="sidebar-card card-action">
-                <form asp-action="MarkDeployed" method="post">
+                <h4>🚀 Deployment</h4>
+                <p style="font-size:0.82rem;color:#6b7280;margin-bottom:12px">
+                    Fully approved. Ready to deploy.
+                </p>
+                <form asp-controller="ChangeRequests" asp-action="MarkDeployed" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.Id" />
-                    <button type="submit" class="btn-deploy full-width" onclick="return confirm('Mark this change request as deployed?')">
+                    <button type="submit" class="btn-deploy full-width"
+                            onclick="return confirm('Mark @Model.CRId as deployed?')">
                         🚀 Mark as Deployed
                     </button>
                 </form>
             </div>
         }
+
+        <!-- Jenkins -->
+        <div class="sidebar-card card-code">
+            <h4>Jenkins Integration</h4>
+            <code class="code-block">CR_ID=@Model.CRId</code>
+            <p class="code-hint">Pass this ID to your Jenkins pipeline to gate deployment on approval status.</p>
+        </div>
+
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        function toggleReject() {
-            const panel = document.getElementById('rejectPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        }
-    </script>
-}

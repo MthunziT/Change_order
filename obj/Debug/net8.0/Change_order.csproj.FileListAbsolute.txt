@@ -138,6 +138,7 @@ C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\Change_or
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\Change_order.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\Change_order.RazorAssemblyInfo.cache
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\Change_order.RazorAssemblyInfo.cs
+C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\Change_order.sourcelink.json
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\99021460\Documents\Change_order\Change_order\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json

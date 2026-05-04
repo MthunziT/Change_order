@@ -13,15 +13,15 @@ namespace Change_order.Controllers
         private readonly ChangeOrderDbContext _db;
         private readonly IChangeRequestService _crService;
         private readonly IUserService _userService;
-        //private readonly IEmailService _emailService;
+        private readonly IEmailService _emailService;
 
         public ChangeRequestsController(ChangeOrderDbContext db, IChangeRequestService crService,
-            IUserService userService )//, //IEmailService emailService)
+            IUserService userService ,IEmailService emailService)
         {
             _db = db;
             _crService = crService;
             _userService = userService;
-            //_emailService = emailService;
+            _emailService = emailService;
         }
 
         private async Task<ApplicationUser> GetCurrentUserAsync()
@@ -58,7 +58,7 @@ namespace Change_order.Controllers
             await _db.SaveChangesAsync();
 
             // Notify Manager 1
-            //_ = _emailService.SendSubmittedAsync(model, user.Email);
+            _ = _emailService.SendSubmittedAsync(model, user.Email);
 
             TempData["Success"] = $"Change Request {model.CRId} submitted. Manager 1 has been notified.";
             return RedirectToAction("Index", "Dashboard");
@@ -102,7 +102,7 @@ namespace Change_order.Controllers
                 await _db.SaveChangesAsync();
 
                 // Notify developer of rejection
-                //_ = _emailService.SendRejectedAsync(cr, developerEmail);
+                _ = _emailService.SendRejectedAsync(cr, developerEmail);
 
                 TempData["Success"] = $"Change Request {cr.CRId} has been rejected.";
             }
@@ -117,7 +117,7 @@ namespace Change_order.Controllers
                 await _db.SaveChangesAsync();
 
                 // Notify Manager 2
-               // _ = _emailService.SendManager1ApprovedAsync(cr);
+                _ = _emailService.SendManager1ApprovedAsync(cr);
 
                 TempData["Success"] = $"Change Request {cr.CRId} approved. Manager 2 has been notified.";
             }
@@ -132,7 +132,7 @@ namespace Change_order.Controllers
                 await _db.SaveChangesAsync();
 
                 // Notify developer — fully approved
-               // _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
+               _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
 
                 TempData["Success"] = $"Change Request {cr.CRId} fully approved. Developer has been notified.";
             }
@@ -164,7 +164,7 @@ namespace Change_order.Controllers
             await _db.SaveChangesAsync();
 
             // Notify everyone
-           // _ = _emailService.SendDeployedAsync(cr, user.Email);
+            _ = _emailService.SendDeployedAsync(cr, user.Email);
 
             TempData["Success"] = $"Change Request {cr.CRId} marked as deployed. All parties notified.";
             return RedirectToAction("Details", new { id });
