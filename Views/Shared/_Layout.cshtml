@@ -28,7 +28,7 @@
                 <span class="user-name">@User.Identity.Name?.Split('\\').LastOrDefault()</span>
                 <form method="post" action="/Account/Logout" style="display:inline">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-logout">Sign out</button>
+                   @*  <button type="submit" class="btn-logout">Sign out</button> *@
                 </form>
             </div>
         </nav>

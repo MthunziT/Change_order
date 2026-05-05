@@ -17,13 +17,13 @@ namespace Change_order.Models
             Admin
         }
 }
-     public class UserManagementLoginResult
-     {
-    public int UserID { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string Surname { get; set; } = string.Empty;
-    public string Username { get; set; } = string.Empty;
-    public string EmailAddress { get; set; } = string.Empty;
-    public string Department { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty;
-     }
+    // public class UserManagementLoginResult
+    // {
+    //public int UserID { get; set; }
+    //public string FirstName { get; set; } = string.Empty;
+    //public string Surname { get; set; } = string.Empty;
+    //public string Username { get; set; } = string.Empty;
+    //public string EmailAddress { get; set; } = string.Empty;
+    //public string Department { get; set; } = string.Empty;
+    //public string Role { get; set; } = string.Empty;
+    // }

@@ -74,7 +74,7 @@ namespace Change_order.Models
         public string DeveloperName { get; set; } = string.Empty;
 
         [Display(Name = "Date Submitted")]
-        public DateTime DateSubmitted { get; set; } = DateTime.UtcNow;
+        public DateTime DateSubmitted { get; set; } = DateTime.Now;
 
         public ChangeRequestStatus Status { get; set; } = ChangeRequestStatus.Pending;
 

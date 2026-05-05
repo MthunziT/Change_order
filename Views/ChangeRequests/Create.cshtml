@@ -28,23 +28,31 @@
             <div class="form-grid">
                 <div class="form-group col-2">
                     <label asp-for="Name">Change Request Name *</label>
-                    <input asp-for="Name" class="form-input" placeholder="e.g. Payment Gateway Upgrade v3.0" />
+                    <input asp-for="Name" class="form-input" placeholder="e.g. Liquid v3.0" />
                     <span asp-validation-for="Name" class="field-error"></span>
                 </div>
                 <div class="form-group col-2">
                     <label asp-for="ApplicationName">Application / System *</label>
-                    <select asp-for="ApplicationName" class="form-input">
+                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)"
+                            style="margin-bottom:8px">
                         <option value="">Select application...</option>
-                        <option>Payment System</option>
-                        <option>Late Appeal System</option>
-                        <option>Valuation</option>
-                        <option>HR Management System</option>
-                        <option>Finance Portal</option>
-                        <option>Reporting Dashboard</option>
+                        <option>Liquid</option>
+                        <option>Zebra</option>
+                        <option>VNS-Valuation Notice System</option>
+                        <option>Akon</option>
+                        <option>Task Management</option>
+                        <option>infoUpdater</option>
                         <option>Objections</option>
-                        <option>Authentication Service</option>
-                        <option>Other</option>
+                        <option>GV Tool App</option>
+                        <option>Notices</option>
+                        <option>Verification</option>
+                        <option>SearchPacks</option>
+                        <option value="Other">Other</option>
                     </select>
+                    <input asp-for="ApplicationName" id="appNameInput" class="form-input"
+                           placeholder="Type application name..."
+                           style="display:none"
+                           autocomplete="off" />
                     <span asp-validation-for="ApplicationName" class="field-error"></span>
                 </div>
                 <div class="form-group col-1">
@@ -72,9 +80,9 @@
                     <label asp-for="Environment">Environment</label>
                     <select asp-for="Environment" class="form-input">
                         <option>Production</option>
-                        <option>Staging</option>
+                        @* <option>Staging</option> *@
                         <option>UAT</option>
-                        <option>Development</option>
+                       @*  <option>Development</option> *@
                     </select>
                 </div>
             </div>
@@ -138,3 +146,50 @@
         <button type="submit" class="btn-primary">Submit Change Request</button>
     </div>
 </form>
+@section Scripts {
+    <script>
+        function handleAppChange(select) {
+            const input = document.getElementById('appNameInput');
+            if (select.value === 'Other') {
+                // Show text input, clear it, hide select value from model
+                input.style.display = 'block';
+                input.value = '';
+                input.focus();
+                // Remove name from select so only input submits
+                select.removeAttribute('name');
+                input.setAttribute('name', 'ApplicationName');
+            } else {
+                // Hide text input, use select value
+                input.style.display = 'none';
+                input.removeAttribute('name');
+                select.setAttribute('name', 'ApplicationName');
+                // Set the hidden input value to match select
+                input.value = select.value;
+            }
+        }
+
+        // On page load — if ApplicationName already has a value (e.g. validation failed),
+        // check if it matches a known option, if not show the text input
+        document.addEventListener('DOMContentLoaded', function () {
+            const select = document.getElementById('appSelect');
+            const input = document.getElementById('appNameInput');
+            const currentValue = input.value;
+
+            if (!currentValue) return;
+
+            // Check if current value matches any option
+            const options = Array.from(select.options).map(o => o.value);
+            if (options.includes(currentValue)) {
+                select.value = currentValue;
+                select.setAttribute('name', 'ApplicationName');
+                input.removeAttribute('name');
+            } else {
+                // It's a custom value — show text input
+                select.value = 'Other';
+                input.style.display = 'block';
+                input.setAttribute('name', 'ApplicationName');
+                select.removeAttribute('name');
+            }
+        });
+    </script>
+}

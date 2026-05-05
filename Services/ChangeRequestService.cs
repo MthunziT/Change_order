@@ -16,7 +16,7 @@ namespace Change_order.Services
 {
     public interface IChangeRequestService
     {
-        Task<string> GenerateCRIdAsync();
+        Task<string> GenerateCRIdAsync(string applicationName);
         Task<byte[]> GeneratePdfAsync(ChangeRequest cr);
         string GetStatusBadgeClass(ChangeRequestStatus status);
         string GetPriorityBadgeClass(Priority priority);
@@ -32,21 +32,74 @@ namespace Change_order.Services
             _db = db;
         }
 
-        public async Task<string> GenerateCRIdAsync()
+        public async Task<string> GenerateCRIdAsync(string applicationName)
         {
+            var prefix = GetApplicationPrefix(applicationName);
+
+            // Find the last CR with the same prefix
             var last = await _db.ChangeRequests
+                .Where(r => r.CRId.StartsWith(prefix))
                 .OrderByDescending(r => r.Id)
                 .FirstOrDefaultAsync();
 
             int nextNum = 1;
-            if (last != null && last.CRId.StartsWith("CON"))
+            if (last != null)
             {
-                if (int.TryParse(last.CRId[3..], out int n))
+                var numPart = last.CRId.Substring(prefix.Length);
+                if (int.TryParse(numPart, out int n))
                     nextNum = n + 1;
             }
-            return $"CON{nextNum:D3}";
+
+            return $"{prefix}{nextNum:D3}";
         }
 
+        private static string GetApplicationPrefix(string applicationName)
+        {
+            var name = applicationName.Trim();
+
+            // Known applications
+            return name.ToLower() switch
+            {
+                "liquid" => "LI",
+                "zebra" => "ZB",
+                "vns-valuation notice system" => "VNS",
+                "akon" => "AK",
+                "task management" => "TM",
+                "infoupdater" => "IU",
+                "objections" => "OB",
+                "gv tool app" => "GV",
+                "notices" => "NT",
+                "verification" => "VR",
+                "searchpacks" => "SP",
+                _ => GeneratePrefixFromName(name)
+            };
+        }
+
+        private static string GeneratePrefixFromName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "CR";
+
+            var words = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            string prefix;
+
+            if (words.Length >= 2)
+            {
+                // Multi-word: take first letter of each word e.g. "My App" → "MA"
+                prefix = string.Concat(words.Select(w => char.ToUpper(w[0])));
+            }
+            else
+            {
+                prefix = name.Length >= 3
+                    ? name.Substring(0, 3).ToUpper()
+                    : name.ToUpper();
+            }
+
+            // Cap at 4 characters to keep CR IDs readable
+            return prefix.Length > 4 ? prefix.Substring(0, 4) : prefix;
+        }
+        
         public bool IsDeploymentAllowed(ChangeRequest cr)
             => cr.Status == ChangeRequestStatus.Manager2Approved;
 
@@ -234,7 +287,7 @@ namespace Change_order.Services
 
             // ── FOOTER ───────────────────────────────────────────────────────
             doc.Add(new Paragraph(
-                    $"\nGenerated: {DateTime.Now:dd MMM yyyy HH:mm}  |  Change Order Management System  |  CONFIDENTIAL")
+                    $"\nGenerated: {DateTime.Now:dd MMM yyyy HH:mm}  |  Change Order System  |  CONFIDENTIAL")
                 .SetFont(bodyFont).SetFontSize(7)
                 .SetFontColor(new DeviceRgb(150, 130, 60))
                 .SetTextAlignment(TextAlignment.CENTER)

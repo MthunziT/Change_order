@@ -48,10 +48,10 @@ namespace Change_order.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
-            model.CRId = await _crService.GenerateCRIdAsync();
+            model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName);
             model.DeveloperUserId = user.WindowsUsername;
             model.DeveloperName = user.FullName;
-            model.DateSubmitted = DateTime.UtcNow;
+            model.DateSubmitted = DateTime.Now;
             model.Status = ChangeRequestStatus.Pending;
 
             _db.ChangeRequests.Add(model);
@@ -96,7 +96,7 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Rejected;
                 cr.RejectedByUserId = user.WindowsUsername;
                 cr.RejectedByName = user.FullName;
-                cr.RejectedAt = DateTime.UtcNow;
+                cr.RejectedAt = DateTime.Now;
                 cr.RejectionReason = model.RejectionReason;
 
                 await _db.SaveChangesAsync();
@@ -111,7 +111,7 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Manager1Approved;
                 cr.Manager1UserId = user.WindowsUsername;
                 cr.Manager1Name = user.FullName;
-                cr.Manager1ApprovedAt = DateTime.UtcNow;
+                cr.Manager1ApprovedAt = DateTime.Now;
                 cr.Manager1Comments = model.Comments;
 
                 await _db.SaveChangesAsync();
@@ -126,7 +126,7 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Manager2Approved;
                 cr.Manager2UserId = user.WindowsUsername;
                 cr.Manager2Name = user.FullName;
-                cr.Manager2ApprovedAt = DateTime.UtcNow;
+                cr.Manager2ApprovedAt = DateTime.Now;
                 cr.Manager2Comments = model.Comments;
 
                 await _db.SaveChangesAsync();
@@ -159,7 +159,7 @@ namespace Change_order.Controllers
 
             var user = await GetCurrentUserAsync();
             cr.Status = ChangeRequestStatus.Deployed;
-            cr.DeployedAt = DateTime.UtcNow;
+            cr.DeployedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
 

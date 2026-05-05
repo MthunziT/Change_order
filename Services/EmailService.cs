@@ -48,7 +48,7 @@ namespace Change_order.Services
                 },
                 message: "A new change request has been submitted and requires your approval as <b>Manager 1</b>.",
                 actionText: "Review & Approve",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}}"
+                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
             );
 
             // To: Manager 1
@@ -65,7 +65,7 @@ namespace Change_order.Services
             var subject = $"[Change Request] Awaiting Your Approval — {cr.CRId}";
             var body = BuildEmail(
                 title: "Change Request Awaiting Your Approval",
-                color: "#1d4ed8",
+                color: "#e6b000",
                 icon: "✅",
                 crId: cr.CRId,
                 lines: new[]
@@ -81,7 +81,7 @@ namespace Change_order.Services
                 },
                 message: "This change request has been approved by <b>Manager 1</b> and now requires your final approval as <b>Manager 2</b>.",
                 actionText: "Review & Approve",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}}"
+                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
             );
 
             // To: Manager 2
@@ -98,7 +98,7 @@ namespace Change_order.Services
             var subject = $"[Change Request] APPROVED — {cr.CRId} Ready for Deployment";
             var body = BuildEmail(
                 title: "Your Change Request Has Been Approved",
-                color: "#16a34a",
+                color: "#e6b000",
                 icon: "🎉",
                 crId: cr.CRId,
                 lines: new[]
@@ -113,7 +113,7 @@ namespace Change_order.Services
                 },
                 message: "Your change request has been <b>fully approved</b> by both managers. You may now proceed with deployment on the planned date.",
                 actionText: "View Change Request",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}}"
+                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
             );
 
             // To: Developer
@@ -130,7 +130,7 @@ namespace Change_order.Services
             var subject = $"[Change Request] REJECTED — {cr.CRId}";
             var body = BuildEmail(
                 title: "Your Change Request Has Been Rejected",
-                color: "#dc3545",
+                color: "#e6b000",
                 icon: "❌",
                 crId: cr.CRId,
                 lines: new[]
