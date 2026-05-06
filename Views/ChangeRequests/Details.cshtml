@@ -51,7 +51,7 @@
     </div>
 </div>
 
-<!-- ACTION BANNER — shown only when manager action is needed -->
+<!-- ACTION BANNER -->
 @if (canApprove)
 {
     <div style="background:linear-gradient(135deg,#e6b000,#d4a300);border-radius:12px;padding:18px 24px;
@@ -75,7 +75,6 @@
 }
 
 <div class="details-grid">
-    <!-- LEFT: Full CR Details -->
     <div class="details-main">
 
         <!-- Developer Info -->
@@ -87,7 +86,7 @@
                 <dt>Username</dt>
                 <dd>@Model.DeveloperUserId</dd>
                 <dt>Date Submitted</dt>
-                <dd>@Model.DateSubmitted.ToString("dd MMM yyyy HH:mm")</dd>
+                <dd>@Model.DateSubmitted.ToString("yyyy-MM-dd HH:mm")</dd>
                 <dt>Current Status</dt>
                 <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Status</span></dd>
             </dl>
@@ -135,7 +134,7 @@
             <h3 class="detail-section-title">Deployment Plan</h3>
             <dl class="detail-list">
                 <dt>Planned Date</dt>
-                <dd>@Model.DeploymentDate.ToString("dd MMM yyyy")</dd>
+                <dd>@Model.DeploymentDate.ToString("yyyy-MM-dd")</dd>
                 <dt>Window</dt>
                 <dd>@(Model.DeploymentWindow ?? "—")</dd>
                 <dt>Rollback Plan</dt>
@@ -154,7 +153,7 @@
                     <dt>Rejected By</dt>
                     <dd>@Model.RejectedByName</dd>
                     <dt>Date</dt>
-                    <dd>@Model.RejectedAt?.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dd>@Model.RejectedAt?.ToString("yyyy-MM-dd HH:mm")</dd>
                     <dt>Reason</dt>
                     <dd class="rejection-reason">@Model.RejectionReason</dd>
                 </dl>
@@ -181,7 +180,7 @@
                     <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
                                         padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
                         ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
-                        @Model.Manager1ApprovedAt?.ToString("dd MMM yyyy HH:mm")
+                        @Model.Manager1ApprovedAt?.ToString("yyyy-MM-dd HH:mm")
                         @if (!string.IsNullOrEmpty(Model.Manager1Comments))
                         {
                             <span>— "@Model.Manager1Comments"</span>
@@ -189,7 +188,6 @@
                     </div>
                 }
 
-                <!-- Shared comments textarea (read by JS before submit) -->
                 <div class="form-group" style="margin-bottom:16px">
                     <label style="font-size:0.78rem;font-weight:600;text-transform:uppercase;
                                       letter-spacing:0.07em;color:#6b7280;display:block;margin-bottom:6px">
@@ -201,33 +199,26 @@
 
                 <div class="action-buttons" style="display:flex;gap:10px;margin-bottom:12px">
 
-                    <!-- ✅ APPROVE — its own form, no ambiguity -->
                     <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
                         <input type="hidden" name="CRId" value="@Model.CRId" />
                         <input type="hidden" name="Approved" value="true" />
                         <input type="hidden" name="Comments" id="approveComments" value="" />
-                        <button type="submit"
-                                class="btn-approve"
+                        <button type="submit" class="btn-approve"
                                 style="width:100%;padding:14px;font-size:1rem"
                                 onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
                             ✓ Approve
                         </button>
                     </form>
 
-                    <!-- ✕ REJECT — only shows the panel, does NOT submit -->
-                    <button type="button"
-                            id="showRejectBtn"
-                            class="btn-reject"
+                    <button type="button" id="showRejectBtn" class="btn-reject"
                             style="flex:1;padding:14px;font-size:1rem"
                             onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
                         ✕ Reject
                     </button>
-
                 </div>
 
-                <!-- Reject panel — its own form -->
                 <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #dc3545;
                                                  border-radius:10px;padding:16px;margin-top:8px">
                     <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post">
@@ -246,8 +237,7 @@
                               style="border-color:#dc3545;margin-bottom:12px"></textarea>
 
                         <div style="display:flex;gap:10px">
-                            <button type="submit"
-                                    class="btn-reject-confirm"
+                            <button type="submit" class="btn-reject-confirm"
                                     style="flex:1;padding:12px"
                                     onclick="document.getElementById('rejectComments').value = document.getElementById('sharedComments').value">
                                 Confirm Rejection
@@ -262,10 +252,8 @@
                         </div>
                     </form>
                 </div>
-
             </div>
         }
-
     </div>
 
     <!-- RIGHT: Sidebar -->
@@ -305,7 +293,7 @@
                         @if (Model.Manager1ApprovedAt.HasValue)
                         {
                             <small>@Model.Manager1Name</small>
-                            <small>@Model.Manager1ApprovedAt?.ToString("dd MMM yyyy HH:mm")</small>
+                            <small>@Model.Manager1ApprovedAt?.ToString("yyyy-MM-dd HH:mm")</small>
                             if (!string.IsNullOrEmpty(Model.Manager1Comments))
                             {
                                 <em>"@Model.Manager1Comments"</em>
@@ -334,7 +322,7 @@
                         @if (Model.Manager2ApprovedAt.HasValue)
                         {
                             <small>@Model.Manager2Name</small>
-                            <small>@Model.Manager2ApprovedAt?.ToString("dd MMM yyyy HH:mm")</small>
+                            <small>@Model.Manager2ApprovedAt?.ToString("yyyy-MM-dd HH:mm")</small>
                             if (!string.IsNullOrEmpty(Model.Manager2Comments))
                             {
                                 <em>"@Model.Manager2Comments"</em>
@@ -350,7 +338,6 @@
                         }
                     </div>
                 </div>
-
             </div>
         </div>
 

@@ -82,7 +82,7 @@
                             <td>@cr.DeveloperName</td>
                             <td><span class="badge @crService.GetPriorityBadgeClass(cr.Priority)">@cr.Priority</span></td>
                             <td><span class="badge @crService.GetStatusBadgeClass(cr.Status)">@cr.Status</span></td>
-                            <td>@cr.DeploymentDate.ToString("dd MMM yyyy")</td>
+                            <td>@cr.DeploymentDate.ToString("yyyy-MM-dd")</td>
                             <td>
                                 @if (cr.Status == ChangeRequestStatus.Deployed)
                                 {

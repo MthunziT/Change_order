@@ -4,6 +4,7 @@ using Change_order.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Change_order.Controllers
 {
@@ -16,12 +17,19 @@ namespace Change_order.Controllers
         private readonly IEmailService _emailService;
 
         public ChangeRequestsController(ChangeOrderDbContext db, IChangeRequestService crService,
-            IUserService userService ,IEmailService emailService)
+            IUserService userService, IEmailService emailService)
         {
             _db = db;
             _crService = crService;
             _userService = userService;
             _emailService = emailService;
+        }
+
+        // Strips seconds and milliseconds before saving to database
+        private static DateTime Now()
+        {
+            var dt = DateTime.Now;
+            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, 0, 0, DateTimeKind.Local);
         }
 
         private async Task<ApplicationUser> GetCurrentUserAsync()
@@ -51,13 +59,12 @@ namespace Change_order.Controllers
             model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName);
             model.DeveloperUserId = user.WindowsUsername;
             model.DeveloperName = user.FullName;
-            model.DateSubmitted = DateTime.Now;
+            model.DateSubmitted = Now();
             model.Status = ChangeRequestStatus.Pending;
 
             _db.ChangeRequests.Add(model);
             await _db.SaveChangesAsync();
 
-            // Notify Manager 1
             _ = _emailService.SendSubmittedAsync(model, user.Email);
 
             TempData["Success"] = $"Change Request {model.CRId} submitted. Manager 1 has been notified.";
@@ -87,7 +94,6 @@ namespace Change_order.Controllers
             var cr = await _db.ChangeRequests.FindAsync(model.ChangeRequestId);
             if (cr == null) return NotFound();
 
-            // Get developer's email for notifications
             var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
             var developerEmail = developer?.Email ?? "";
 
@@ -96,12 +102,11 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Rejected;
                 cr.RejectedByUserId = user.WindowsUsername;
                 cr.RejectedByName = user.FullName;
-                cr.RejectedAt = DateTime.Now;
+                cr.RejectedAt = Now();
                 cr.RejectionReason = model.RejectionReason;
 
                 await _db.SaveChangesAsync();
 
-                // Notify developer of rejection
                 _ = _emailService.SendRejectedAsync(cr, developerEmail);
 
                 TempData["Success"] = $"Change Request {cr.CRId} has been rejected.";
@@ -111,12 +116,11 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Manager1Approved;
                 cr.Manager1UserId = user.WindowsUsername;
                 cr.Manager1Name = user.FullName;
-                cr.Manager1ApprovedAt = DateTime.Now;
+                cr.Manager1ApprovedAt = Now();
                 cr.Manager1Comments = model.Comments;
 
                 await _db.SaveChangesAsync();
 
-                // Notify Manager 2
                 _ = _emailService.SendManager1ApprovedAsync(cr);
 
                 TempData["Success"] = $"Change Request {cr.CRId} approved. Manager 2 has been notified.";
@@ -126,13 +130,12 @@ namespace Change_order.Controllers
                 cr.Status = ChangeRequestStatus.Manager2Approved;
                 cr.Manager2UserId = user.WindowsUsername;
                 cr.Manager2Name = user.FullName;
-                cr.Manager2ApprovedAt = DateTime.Now;
+                cr.Manager2ApprovedAt = Now();
                 cr.Manager2Comments = model.Comments;
 
                 await _db.SaveChangesAsync();
 
-                // Notify developer — fully approved
-               _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
+                _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
 
                 TempData["Success"] = $"Change Request {cr.CRId} fully approved. Developer has been notified.";
             }
@@ -159,11 +162,10 @@ namespace Change_order.Controllers
 
             var user = await GetCurrentUserAsync();
             cr.Status = ChangeRequestStatus.Deployed;
-            cr.DeployedAt = DateTime.Now;
+            cr.DeployedAt = Now();
 
             await _db.SaveChangesAsync();
 
-            // Notify everyone
             _ = _emailService.SendDeployedAsync(cr, user.Email);
 
             TempData["Success"] = $"Change Request {cr.CRId} marked as deployed. All parties notified.";
@@ -199,8 +201,9 @@ namespace Change_order.Controllers
                 crId = cr.CRId,
                 status = cr.Status.ToString(),
                 allowed,
-                reason = allowed ? "Approved. Deployment may proceed."
-                                 : $"Deployment blocked. Current status: {cr.Status}."
+                reason = allowed
+                    ? "Approved. Deployment may proceed."
+                    : $"Deployment blocked. Current status: {cr.Status}."
             });
         }
     }

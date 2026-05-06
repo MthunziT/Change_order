@@ -4,6 +4,7 @@ using Change_order.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Change_order.Migrations
 {
     [DbContext(typeof(ChangeOrderDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506075912_UseSmallDatetime")]
+    partial class UseSmallDatetime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,10 +53,10 @@ namespace Change_order.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DateSubmitted")
-                        .HasColumnType("datetime2(0)");
+                        .HasColumnType("smalldatetime");
 
                     b.Property<DateTime?>("DeployedAt")
-                        .HasColumnType("datetime2(0)");
+                        .HasColumnType("smalldatetime");
 
                     b.Property<DateTime>("DeploymentDate")
                         .HasColumnType("datetime2");
@@ -90,7 +93,7 @@ namespace Change_order.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("Manager1ApprovedAt")
-                        .HasColumnType("datetime2(0)");
+                        .HasColumnType("smalldatetime");
 
                     b.Property<string>("Manager1Comments")
                         .HasColumnType("nvarchar(max)");
@@ -102,7 +105,7 @@ namespace Change_order.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("Manager2ApprovedAt")
-                        .HasColumnType("datetime2(0)");
+                        .HasColumnType("smalldatetime");
 
                     b.Property<string>("Manager2Comments")
                         .HasColumnType("nvarchar(max)");
@@ -123,7 +126,7 @@ namespace Change_order.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("RejectedAt")
-                        .HasColumnType("datetime2(0)");
+                        .HasColumnType("smalldatetime");
 
                     b.Property<string>("RejectedByName")
                         .HasColumnType("nvarchar(max)");
@@ -147,6 +150,9 @@ namespace Change_order.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CRId")
+                        .IsUnique();
 
                     b.ToTable("ChangeRequests");
                 });

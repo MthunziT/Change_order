@@ -1,4 +1,4 @@
-using Change_order.Data;
+﻿using Change_order.Data;
 using Change_order.Models;
 using Change_order.Services;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +19,6 @@ builder.Services.Configure<EmailSettings>(
 builder.Services.AddScoped<IChangeRequestService, ChangeRequestService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -36,9 +35,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
-
 app.Run();

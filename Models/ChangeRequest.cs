@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Change_order.Models
 {
@@ -81,16 +82,19 @@ namespace Change_order.Models
         // Approval trail
         public string? Manager1UserId { get; set; }
         public string? Manager1Name { get; set; }
+
         public DateTime? Manager1ApprovedAt { get; set; }
         public string? Manager1Comments { get; set; }
 
         public string? Manager2UserId { get; set; }
         public string? Manager2Name { get; set; }
+
         public DateTime? Manager2ApprovedAt { get; set; }
         public string? Manager2Comments { get; set; }
 
         public string? RejectedByUserId { get; set; }
         public string? RejectedByName { get; set; }
+
         public DateTime? RejectedAt { get; set; }
         public string? RejectionReason { get; set; }
 

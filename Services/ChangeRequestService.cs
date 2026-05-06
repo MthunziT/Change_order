@@ -9,8 +9,6 @@ using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
 using Microsoft.EntityFrameworkCore;
-//using Microsoft.EntityFrameworkCore.Metadata.Internal;
-//using System.Reflection.Metadata;
 
 namespace Change_order.Services
 {
@@ -36,7 +34,6 @@ namespace Change_order.Services
         {
             var prefix = GetApplicationPrefix(applicationName);
 
-            // Find the last CR with the same prefix
             var last = await _db.ChangeRequests
                 .Where(r => r.CRId.StartsWith(prefix))
                 .OrderByDescending(r => r.Id)
@@ -57,7 +54,6 @@ namespace Change_order.Services
         {
             var name = applicationName.Trim();
 
-            // Known applications
             return name.ToLower() switch
             {
                 "liquid" => "LI",
@@ -85,21 +81,13 @@ namespace Change_order.Services
             string prefix;
 
             if (words.Length >= 2)
-            {
-                // Multi-word: take first letter of each word e.g. "My App" → "MA"
                 prefix = string.Concat(words.Select(w => char.ToUpper(w[0])));
-            }
             else
-            {
-                prefix = name.Length >= 3
-                    ? name.Substring(0, 3).ToUpper()
-                    : name.ToUpper();
-            }
+                prefix = name.Length >= 3 ? name.Substring(0, 3).ToUpper() : name.ToUpper();
 
-            // Cap at 4 characters to keep CR IDs readable
             return prefix.Length > 4 ? prefix.Substring(0, 4) : prefix;
         }
-        
+
         public bool IsDeploymentAllowed(ChangeRequest cr)
             => cr.Status == ChangeRequestStatus.Manager2Approved;
 
@@ -135,23 +123,20 @@ namespace Change_order.Services
             var bodyFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
             var boldFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA_BOLD);
 
-            // ── Gold & Black palette ──────────────────────────────────────────
             var black = new DeviceRgb(0, 0, 0);
-            var darkGray = new DeviceRgb(26, 26, 26); 
-            var gold = new DeviceRgb(230, 176, 0);   
-            var goldDark = new DeviceRgb(180, 138, 0);   
-            var goldLight = new DeviceRgb(255, 245, 200); 
-            var goldPale = new DeviceRgb(252, 248, 230);  
+            var darkGray = new DeviceRgb(26, 26, 26);
+            var gold = new DeviceRgb(230, 176, 0);
+            var goldDark = new DeviceRgb(180, 138, 0);
+            var goldLight = new DeviceRgb(255, 245, 200);
+            var goldPale = new DeviceRgb(252, 248, 230);
             var white = ColorConstants.WHITE;
-            var lightBorder = new DeviceRgb(220, 200, 120);  
-                                                             
+            var lightBorder = new DeviceRgb(220, 200, 120);
 
             // ── HEADER ───────────────────────────────────────────────────────
             var headerTable = new Table(UnitValue.CreatePercentArray(new float[] { 70, 30 }))
                 .UseAllAvailableWidth()
                 .SetMarginBottom(16);
 
-            // Left: black background, gold text
             var titleCell = new Cell()
                 .SetBorder(Border.NO_BORDER)
                 .SetBackgroundColor(black)
@@ -161,7 +146,6 @@ namespace Change_order.Services
             titleCell.Add(new Paragraph("COJ Property Branch")
                 .SetFont(bodyFont).SetFontSize(9).SetFontColor(new DeviceRgb(180, 150, 80)));
 
-            // Right: gold background, black text
             var crIdCell = new Cell()
                 .SetBorder(Border.NO_BORDER)
                 .SetBackgroundColor(gold)
@@ -174,29 +158,24 @@ namespace Change_order.Services
             crIdCell.Add(new Paragraph($"Status: {cr.Status.ToString().ToUpper()}")
                 .SetFont(boldFont).SetFontSize(8)
                 .SetFontColor(cr.Status == ChangeRequestStatus.Manager2Approved
-                    ? new DeviceRgb(0, 80, 0)
-                    : darkGray));
+                    ? new DeviceRgb(0, 80, 0) : darkGray));
 
             headerTable.AddCell(titleCell);
             headerTable.AddCell(crIdCell);
             doc.Add(headerTable);
 
-            // ── SECTION HEADING helper ────────────────────────────────────────
+            // ── HELPERS ───────────────────────────────────────────────────────
             void AddSection(string title)
             {
                 doc.Add(new Paragraph(title)
                     .SetFont(boldFont).SetFontSize(10)
                     .SetFontColor(black)
                     .SetBackgroundColor(gold)
-                    .SetPadding(6)
-                    .SetMarginTop(12)
-                    .SetMarginBottom(0));
+                    .SetPadding(6).SetMarginTop(12).SetMarginBottom(0));
             }
 
-            // ── TABLE ROW helper ──────────────────────────────────────────────
             void AddRow(Table t, string label, string value)
             {
-                // Label cell — pale gold background
                 var labelCell = new Cell()
                     .SetBackgroundColor(goldPale)
                     .SetBorder(new SolidBorder(lightBorder, 0.5f))
@@ -204,7 +183,6 @@ namespace Change_order.Services
                 labelCell.Add(new Paragraph(label)
                     .SetFont(boldFont).SetFontSize(9).SetFontColor(goldDark));
 
-                // Value cell — white background
                 var valueCell = new Cell()
                     .SetBackgroundColor(white)
                     .SetBorder(new SolidBorder(lightBorder, 0.5f))
@@ -225,7 +203,7 @@ namespace Change_order.Services
             AddRow(t1, "Category", cr.Category.ToString());
             AddRow(t1, "Priority", cr.Priority.ToString());
             AddRow(t1, "Impact Level", cr.Impact.ToString());
-            AddRow(t1, "Date Submitted", cr.DateSubmitted.ToString("dd MMM yyyy"));
+            AddRow(t1, "Date Submitted", cr.DateSubmitted.ToString("yyyy-MM-dd HH:mm"));
             AddRow(t1, "Developer", cr.DeveloperName);
             doc.Add(t1);
 
@@ -240,7 +218,7 @@ namespace Change_order.Services
             // ── SECTION 3 ────────────────────────────────────────────────────
             AddSection("3. DEPLOYMENT PLAN");
             var t3 = new Table(UnitValue.CreatePercentArray(new float[] { 35, 65 })).UseAllAvailableWidth();
-            AddRow(t3, "Planned Deployment Date", cr.DeploymentDate.ToString("dd MMM yyyy"));
+            AddRow(t3, "Planned Deployment Date", cr.DeploymentDate.ToString("yyyy-MM-dd"));
             AddRow(t3, "Deployment Window", cr.DeploymentWindow ?? "-");
             AddRow(t3, "Rollback Plan", cr.RollbackPlan ?? "-");
             AddRow(t3, "Test Plan", cr.TestPlan ?? "-");
@@ -251,8 +229,7 @@ namespace Change_order.Services
             var t4 = new Table(UnitValue.CreatePercentArray(new float[] { 25, 25, 25, 25 }))
                 .UseAllAvailableWidth();
 
-            // Column headers — dark background, gold text
-            foreach (var h in new[] { "Approver", "Name", "Date", "Comments" })
+            foreach (var h in new[] { "Approver", "Name", "Date & Time", "Comments" })
             {
                 var hc = new Cell()
                     .SetBackgroundColor(darkGray)
@@ -267,7 +244,13 @@ namespace Change_order.Services
                 bool isApproved = date.HasValue;
                 var rowBg = isApproved ? goldLight : white;
 
-                foreach (var val in new[] { role, name ?? "Pending", date?.ToString("dd MMM yyyy") ?? "-", comments ?? "-" })
+                foreach (var val in new[]
+                {
+                    role,
+                    name ?? "Pending",
+                    date?.ToString("yyyy-MM-dd HH:mm") ?? "-",
+                    comments ?? "-"
+                })
                 {
                     var c = new Cell()
                         .SetBackgroundColor(rowBg)
@@ -287,7 +270,7 @@ namespace Change_order.Services
 
             // ── FOOTER ───────────────────────────────────────────────────────
             doc.Add(new Paragraph(
-                    $"\nGenerated: {DateTime.Now:dd MMM yyyy HH:mm}  |  Change Order System  |  CONFIDENTIAL")
+                    $"\nGenerated: {DateTime.Now:yyyy-MM-dd HH:mm}  |  Change Order System  |  CONFIDENTIAL")
                 .SetFont(bodyFont).SetFontSize(7)
                 .SetFontColor(new DeviceRgb(150, 130, 60))
                 .SetTextAlignment(TextAlignment.CENTER)

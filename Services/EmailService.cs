@@ -42,21 +42,17 @@ namespace Change_order.Services
                     $"<b>Priority:</b> {cr.Priority}",
                     $"<b>Category:</b> {cr.Category}",
                     $"<b>Impact:</b> {cr.Impact}",
-                    $"<b>Deployment Date:</b> {cr.DeploymentDate:dd MMM yyyy}",
+                    $"<b>Date Submitted:</b> {cr.DateSubmitted:yyyy-MM-dd HH:mm}",
+                    $"<b>Deployment Date:</b> {cr.DeploymentDate:yyyy-MM-dd}",
                     $"<b>Description:</b> {cr.Description}",
                     $"<b>Business Justification:</b> {cr.BusinessJustification}"
                 },
                 message: "A new change request has been submitted and requires your approval as <b>Manager 1</b>.",
                 actionText: "Review & Approve",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
-            // To: Manager 1
-            await SendAsync(
-                to: _settings.Manager1Email,
-                subject: subject,
-                body: body
-            );
+            await SendAsync(_settings.Manager1Email, subject, body);
         }
 
         // Called when Manager 1 approves — notify Manager 2
@@ -74,22 +70,17 @@ namespace Change_order.Services
                     $"<b>Application:</b> {cr.ApplicationName}",
                     $"<b>Submitted By:</b> {cr.DeveloperName}",
                     $"<b>Priority:</b> {cr.Priority}",
-                    $"<b>Deployment Date:</b> {cr.DeploymentDate:dd MMM yyyy}",
+                    $"<b>Deployment Date:</b> {cr.DeploymentDate:yyyy-MM-dd}",
                     $"<b>Manager 1 Approved By:</b> {cr.Manager1Name}",
-                    $"<b>Manager 1 Approved On:</b> {cr.Manager1ApprovedAt:dd MMM yyyy HH:mm}",
+                    $"<b>Manager 1 Approved On:</b> {cr.Manager1ApprovedAt:yyyy-MM-dd HH:mm}",
                     $"<b>Manager 1 Comments:</b> {cr.Manager1Comments ?? "None"}"
                 },
                 message: "This change request has been approved by <b>Manager 1</b> and now requires your final approval as <b>Manager 2</b>.",
                 actionText: "Review & Approve",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
-            // To: Manager 2
-            await SendAsync(
-                to: _settings.Manager2Email,
-                subject: subject,
-                body: body
-            );
+            await SendAsync(_settings.Manager2Email, subject, body);
         }
 
         // Called when Manager 2 approves — notify developer
@@ -105,23 +96,18 @@ namespace Change_order.Services
                 {
                     $"<b>Change Request:</b> {cr.Name}",
                     $"<b>Application:</b> {cr.ApplicationName}",
-                    $"<b>Deployment Date:</b> {cr.DeploymentDate:dd MMM yyyy}",
+                    $"<b>Deployment Date:</b> {cr.DeploymentDate:yyyy-MM-dd}",
                     $"<b>Deployment Window:</b> {cr.DeploymentWindow ?? "Not specified"}",
-                    $"<b>Manager 1:</b> {cr.Manager1Name} — Approved on {cr.Manager1ApprovedAt:dd MMM yyyy HH:mm}",
-                    $"<b>Manager 2:</b> {cr.Manager2Name} — Approved on {cr.Manager2ApprovedAt:dd MMM yyyy HH:mm}",
+                    $"<b>Manager 1:</b> {cr.Manager1Name} — Approved on {cr.Manager1ApprovedAt:yyyy-MM-dd HH:mm}",
+                    $"<b>Manager 2:</b> {cr.Manager2Name} — Approved on {cr.Manager2ApprovedAt:yyyy-MM-dd HH:mm}",
                     $"<b>Manager 2 Comments:</b> {cr.Manager2Comments ?? "None"}"
                 },
                 message: "Your change request has been <b>fully approved</b> by both managers. You may now proceed with deployment on the planned date.",
                 actionText: "View Change Request",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
-            // To: Developer
-            await SendAsync(
-                to: developerEmail,
-                subject: subject,
-                body: body
-            );
+            await SendAsync(developerEmail, subject, body);
         }
 
         // Called when rejected — notify developer
@@ -138,20 +124,15 @@ namespace Change_order.Services
                     $"<b>Change Request:</b> {cr.Name}",
                     $"<b>Application:</b> {cr.ApplicationName}",
                     $"<b>Rejected By:</b> {cr.RejectedByName}",
-                    $"<b>Rejected On:</b> {cr.RejectedAt:dd MMM yyyy HH:mm}",
+                    $"<b>Rejected On:</b> {cr.RejectedAt:yyyy-MM-dd HH:mm}",
                     $"<b>Reason:</b> {cr.RejectionReason}"
                 },
                 message: "Your change request has been <b>rejected</b>. Please review the reason below and resubmit after making the necessary changes.",
                 actionText: "View Change Request",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
-            // To: Developer
-            await SendAsync(
-                to: developerEmail,
-                subject: subject,
-                body: body
-            );
+            await SendAsync(developerEmail, subject, body);
         }
 
         // Called when deployed — notify developer + both managers
@@ -168,22 +149,20 @@ namespace Change_order.Services
                     $"<b>Change Request:</b> {cr.Name}",
                     $"<b>Application:</b> {cr.ApplicationName}",
                     $"<b>Deployed By:</b> {cr.DeveloperName}",
-                    $"<b>Deployed On:</b> {cr.DeployedAt:dd MMM yyyy HH:mm}",
-                    $"<b>Manager 1 Approved:</b> {cr.Manager1Name}",
-                    $"<b>Manager 2 Approved:</b> {cr.Manager2Name}"
+                    $"<b>Deployed On:</b> {cr.DeployedAt:yyyy-MM-dd HH:mm}",
+                    $"<b>Manager 1 Approved:</b> {cr.Manager1Name} on {cr.Manager1ApprovedAt:yyyy-MM-dd HH:mm}",
+                    $"<b>Manager 2 Approved:</b> {cr.Manager2Name} on {cr.Manager2ApprovedAt:yyyy-MM-dd HH:mm}"
                 },
                 message: "The change request has been successfully deployed to production.",
                 actionText: "View Change Request",
-                actionUrl: $"http://yourapp/ChangeRequests/Details/{cr.Id}"
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
-            // Notify all three parties
             await SendAsync(developerEmail, subject, body);
             await SendAsync(_settings.Manager1Email, subject, body);
             await SendAsync(_settings.Manager2Email, subject, body);
         }
 
-        // Core send method — respects TestMode
         private async Task SendAsync(string to, string subject, string body)
         {
             if (string.IsNullOrWhiteSpace(to))
@@ -212,14 +191,12 @@ namespace Change_order.Services
                     IsBodyHtml = true
                 };
 
-                // TestMode — redirect all emails to test address
                 var actualTo = _settings.TestMode ? _settings.TestToAddress : to;
                 message.To.Add(actualTo);
 
                 if (_settings.TestMode)
                     _logger.LogInformation("TEST MODE — Email redirected from {Original} to {Test}", to, actualTo);
 
-                // Always add BCC addresses
                 if (!string.IsNullOrEmpty(_settings.DefaultBcc))
                     message.Bcc.Add(_settings.DefaultBcc);
 
@@ -232,7 +209,6 @@ namespace Change_order.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send email to {To} — {Subject}", to, subject);
-                // Never throw — email failure must not break the app
             }
         }
 
@@ -256,10 +232,10 @@ namespace Change_order.Services
                     <tr>
                       <td style='background:{color};padding:32px 40px;text-align:center'>
                         <div style='font-size:44px;margin-bottom:12px'>{icon}</div>
-                        <h1 style='margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.3'>{title}</h1>
+                        <h1 style='margin:0;color:#000000;font-size:22px;font-weight:700;line-height:1.3'>{title}</h1>
                         <div style='margin-top:10px;background:rgba(0,0,0,0.15);display:inline-block;
                                     padding:6px 18px;border-radius:20px'>
-                          <span style='color:#ffffff;font-size:13px;font-weight:600'>CR: {crId}</span>
+                          <span style='color:#000000;font-size:13px;font-weight:600'>CR: {crId}</span>
                         </div>
                       </td>
                     </tr>
