@@ -43,9 +43,6 @@ namespace Change_order.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("AreasImpacted")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("AssessmentAssignedTo")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -214,7 +211,7 @@ namespace Change_order.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChangeRequests");
+                    b.ToTable("ChangeRequests", (string)null);
                 });
 #pragma warning restore 612, 618
         }
