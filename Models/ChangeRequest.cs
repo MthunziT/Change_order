@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Change_order.Models
@@ -9,8 +9,9 @@ namespace Change_order.Models
 
         [Required]
         [StringLength(20)]
-        public string CRId { get; set; } = string.Empty; // e.g. CON001
+        public string CRId { get; set; } = string.Empty;
 
+        // ── Section 1: Identification (auto-filled / dropdowns — unchanged) ──
         [Required]
         [StringLength(200)]
         [Display(Name = "Change Request Name")]
@@ -22,52 +23,121 @@ namespace Change_order.Models
         public string ApplicationName { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(1000)]
-        public string Description { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(500)]
-        [Display(Name = "Business Justification")]
-        public string BusinessJustification { get; set; } = string.Empty;
-
-        [Required]
         [Display(Name = "Priority")]
         public Priority Priority { get; set; }
-
-        [Required]
-        [Display(Name = "Category")]
-        public ChangeCategory Category { get; set; }
 
         [Required]
         [Display(Name = "Impact")]
         public ImpactLevel Impact { get; set; }
 
-        [StringLength(500)]
-        [Display(Name = "Impact Description")]
-        public string? ImpactDescription { get; set; }
-
-        [StringLength(500)]
-        [Display(Name = "Rollback Plan")]
-        public string? RollbackPlan { get; set; }
-
-        [StringLength(500)]
-        [Display(Name = "Test Plan")]
-        public string? TestPlan { get; set; }
-
         [Required]
-        [Display(Name = "Planned Deployment Date")]
-        [DataType(DataType.Date)]
-        public DateTime DeploymentDate { get; set; }
-
-        [Display(Name = "Deployment Window")]
-        [StringLength(100)]
-        public string? DeploymentWindow { get; set; } // e.g. "22:00 - 02:00"
+        [Display(Name = "Category")]
+        public ChangeCategory Category { get; set; }
 
         [StringLength(100)]
         [Display(Name = "Environment")]
         public string Environment { get; set; } = "Production";
 
-        // Populated from Identity
+        // ── Section 2: Description ────────────────────────────────────────────
+        [Required]
+        [StringLength(2000)]
+        [Display(Name = "Change Request Description")]
+        public string Description { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(1000)]
+        [Display(Name = "Business Justification")]
+        public string BusinessJustification { get; set; } = string.Empty;
+
+        // ── Section 3: Impact & Proposed Response ─────────────────────────────
+        [StringLength(1000)]
+        [Display(Name = "Impact Description")]
+        public string? ImpactDescription { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Impact if Not Making the Change")]
+        public string? ImpactIfNotDone { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Timeline of Impact Occurrence")]
+        public string? ImpactTimeline { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Recommended Strategy")]
+        public string? RecommendedStrategy { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Cost / Resource / Time Requirements")]
+        public string? CostResourceTime { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Expected Outcome")]
+        public string? ExpectedOutcome { get; set; }
+
+        // ── Section 4: Detailed Assessment ───────────────────────────────────
+        [StringLength(200)]
+        [Display(Name = "Assessment Assigned To")]
+        public string? AssessmentAssignedTo { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Tasks Affected")]
+        public string? TasksAffected { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Stakeholders Affected")]
+        public string? StakeholdersAffected { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Options Considered")]
+        public string? OptionsConsidered { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Recommended Actions / Action Plan")]
+        public string? RecommendedActions { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Impact on Scope / Quality / Performance")]
+        public string? ImpactOnScope { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Impact on Schedule")]
+        public string? ImpactOnSchedule { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Additional Resources Required")]
+        public string? AdditionalResources { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Additional Cost")]
+        public string? AdditionalCost { get; set; }
+
+        // ── Section 5: Deployment Plan ────────────────────────────────────────
+        [Required]
+        [Display(Name = "Recommended Implementation Start Date")]
+        [DataType(DataType.Date)]
+        public DateTime DeploymentDate { get; set; }
+
+        [Display(Name = "Recommended Implementation Completion Date")]
+        [DataType(DataType.Date)]
+        public DateTime? DeploymentEndDate { get; set; }
+
+        [Display(Name = "Deployment Window")]
+        [StringLength(100)]
+        public string? DeploymentWindow { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Person(s) Responsible for Leading Implementation")]
+        public string? ImplementationLead { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Test Plan")]
+        public string? TestPlan { get; set; }
+
+        [StringLength(1000)]
+        [Display(Name = "Rollback Plan")]
+        public string? RollbackPlan { get; set; }
+
+        // ── Auto-populated from login ──────────────────────────────────────────
         public string DeveloperUserId { get; set; } = string.Empty;
 
         [StringLength(100)]
@@ -79,33 +149,31 @@ namespace Change_order.Models
 
         public ChangeRequestStatus Status { get; set; } = ChangeRequestStatus.Pending;
 
-        // Approval trail
+        // ── Approval trail ────────────────────────────────────────────────────
         public string? Manager1UserId { get; set; }
         public string? Manager1Name { get; set; }
-
         public DateTime? Manager1ApprovedAt { get; set; }
         public string? Manager1Comments { get; set; }
 
         public string? Manager2UserId { get; set; }
         public string? Manager2Name { get; set; }
-
         public DateTime? Manager2ApprovedAt { get; set; }
         public string? Manager2Comments { get; set; }
 
         public string? RejectedByUserId { get; set; }
         public string? RejectedByName { get; set; }
-
         public DateTime? RejectedAt { get; set; }
         public string? RejectionReason { get; set; }
 
         public DateTime? DeployedAt { get; set; }
+        //public string? AreasImpacted { get; set; }
     }
 
     public enum ChangeRequestStatus
     {
         Pending,
         Manager1Approved,
-        Manager2Approved, // = Fully Approved
+        Manager2Approved,
         Rejected,
         Deployed
     }
@@ -118,12 +186,13 @@ namespace Change_order.Models
         Critical
     }
 
+    // ── Updated to match COJ categories ──────────────────────────────────────
     public enum ChangeCategory
     {
-        Standard,
-        Emergency,
-        Normal,
-        Major
+        Implementation,
+        Enhancement,
+        Development,
+        Infrastructure
     }
 
     public enum ImpactLevel

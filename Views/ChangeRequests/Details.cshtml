@@ -16,8 +16,8 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">@Model.CRId</h1>
-        <p class="page-subtitle">@Model.Name</p>
+        <h1 class="page-title">Project Change Request</h1>
+        <p class="page-subtitle">City of Johannesburg Municipality Property Branch &nbsp;·&nbsp; <strong>@Model.CRId</strong> &nbsp;·&nbsp; @Model.Name</p>
     </div>
     <div class="header-actions">
         @if (canDownloadPdf)
@@ -28,7 +28,7 @@
     </div>
 </div>
 
-<!-- Status Bar -->
+<!-- Approval Progress Bar -->
 <div class="status-bar">
     <div class="status-step done">
         <div class="step-dot"></div>
@@ -51,24 +51,20 @@
     </div>
 </div>
 
-<!-- ACTION BANNER -->
+<!-- Action Banner -->
 @if (canApprove)
 {
     <div style="background:linear-gradient(135deg,#e6b000,#d4a300);border-radius:12px;padding:18px 24px;
-                    margin-bottom:24px;display:flex;align-items:center;gap:16px;
-                    box-shadow:0 4px 20px rgba(230,176,0,0.35)">
+                margin-bottom:24px;display:flex;align-items:center;gap:16px;
+                box-shadow:0 4px 20px rgba(230,176,0,0.35)">
         <span style="font-size:2rem">⚡</span>
         <div>
             <strong style="font-size:1rem;color:#000">Action Required</strong>
             <p style="margin:2px 0 0;font-size:0.875rem;color:#1a1a1a">
                 @if (canApproveM1)
-                {
-                    <span>You are <b>Manager 1</b>. This change request is awaiting your approval.</span>
-                }
+                { <span>You are <b>Manager 1</b>. This change request is awaiting your approval.</span> }
                 else
-                {
-                    <span>You are <b>Manager 2</b>. Manager 1 has approved. Your final approval is required.</span>
-                }
+                { <span>You are <b>Manager 2</b>. Manager 1 has approved. Your final approval is required.</span> }
             </p>
         </div>
     </div>
@@ -77,141 +73,380 @@
 <div class="details-grid">
     <div class="details-main">
 
-        <!-- Developer Info -->
-        <div class="detail-section" style="border-left:4px solid #e6b000">
-            <h3 class="detail-section-title">Requested By</h3>
-            <dl class="detail-list">
-                <dt>Developer</dt>
-                <dd><strong>@Model.DeveloperName</strong></dd>
-                <dt>Username</dt>
-                <dd>@Model.DeveloperUserId</dd>
-                <dt>Date Submitted</dt>
-                <dd>@Model.DateSubmitted.ToString("yyyy-MM-dd HH:mm")</dd>
-                <dt>Current Status</dt>
-                <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Status</span></dd>
-            </dl>
-        </div>
-
-        <!-- Change Details -->
-        <div class="detail-section">
-            <h3 class="detail-section-title">Change Details</h3>
-            <dl class="detail-list">
-                <dt>Application</dt>
-                <dd>@Model.ApplicationName</dd>
-                <dt>Environment</dt>
-                <dd>@Model.Environment</dd>
-                <dt>Category</dt>
-                <dd>@Model.Category</dd>
-                <dt>Priority</dt>
-                <dd><span class="badge @crService.GetPriorityBadgeClass(Model.Priority)">@Model.Priority</span></dd>
-                <dt>Impact</dt>
-                <dd>@Model.Impact</dd>
-            </dl>
-        </div>
-
-        <!-- Description -->
-        <div class="detail-section">
-            <h3 class="detail-section-title">Description</h3>
-            <p class="detail-text">@Model.Description</p>
-        </div>
-
-        <!-- Business Justification -->
-        <div class="detail-section">
-            <h3 class="detail-section-title">Business Justification</h3>
-            <p class="detail-text">@Model.BusinessJustification</p>
-        </div>
-
-        @if (!string.IsNullOrEmpty(Model.ImpactDescription))
-        {
-            <div class="detail-section">
-                <h3 class="detail-section-title">Impact Description</h3>
-                <p class="detail-text">@Model.ImpactDescription</p>
-            </div>
+        <!-- Helper: section header style -->
+        @{
+            string SH = "background:#d9d9d9;border-bottom:1px solid #a6a6a6;padding:8px 14px";
+            string ST = "width:100%;border-collapse:collapse;font-size:0.87rem";
+            string LH = "background:#f2f2f2;font-weight:700;padding:8px 12px;border:1px solid #d0d0d0;vertical-align:top;width:28%";
+            string VH = "padding:8px 12px;border:1px solid #d0d0d0;white-space:pre-line";
         }
 
-        <!-- Deployment Plan -->
-        <div class="detail-section">
-            <h3 class="detail-section-title">Deployment Plan</h3>
-            <dl class="detail-list">
-                <dt>Planned Date</dt>
-                <dd>@Model.DeploymentDate.ToString("yyyy-MM-dd")</dd>
-                <dt>Window</dt>
-                <dd>@(Model.DeploymentWindow ?? "—")</dd>
-                <dt>Rollback Plan</dt>
-                <dd>@(Model.RollbackPlan ?? "—")</dd>
-                <dt>Test Plan</dt>
-                <dd>@(Model.TestPlan ?? "—")</dd>
-            </dl>
+        <!-- ══ SECTION 1: Identification ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Change Request Identification</h3></div>
+            <table style="@ST">
+                <tr>
+                    <td style="@LH">Change Request Name</td>
+                    <td style="@VH;font-weight:700">@Model.Name</td>
+                    <td style="@LH;width:18%">Change Request ID #</td>
+                    <td style="@VH;font-weight:700;font-size:1.1rem">@Model.CRId</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Date Submitted</td>
+                    <td style="@VH">@Model.DateSubmitted.ToString("dd/MM/yyyy")</td>
+                    <td style="@LH">Priority (@Model.Priority)</td>
+                    <td style="@VH;font-weight:700">@Model.Priority.ToString()[0]</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Date Last Updated</td>
+                    <td style="@VH">@DateTime.Now.ToString("dd/MM/yyyy")</td>
+                    <td style="@LH">Impact (@Model.Impact)</td>
+                    <td style="@VH;font-weight:700">@Model.Impact.ToString()[0]</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Application / System</td>
+                    <td style="@VH">@Model.ApplicationName</td>
+                    <td style="@LH">Environment</td>
+                    <td style="@VH">@Model.Environment</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Category</td>
+                    <td style="@VH" colspan="3">@Model.Category</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- Rejection Details -->
-        @if (Model.Status == ChangeRequestStatus.Rejected)
-        {
-            <div class="detail-section rejection-section">
-                <h3 class="detail-section-title">❌ Rejection Details</h3>
-                <dl class="detail-list">
-                    <dt>Rejected By</dt>
-                    <dd>@Model.RejectedByName</dd>
-                    <dt>Date</dt>
-                    <dd>@Model.RejectedAt?.ToString("yyyy-MM-dd HH:mm")</dd>
-                    <dt>Reason</dt>
-                    <dd class="rejection-reason">@Model.RejectionReason</dd>
-                </dl>
+        <!-- ══ SECTION 2: Description ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH">
+                <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                    Change Request Description <span style="font-weight:400;font-size:0.82rem">(completed by the submitting party)</span>
+                </h3>
             </div>
-        }
+            <table style="@ST">
+                <tr>
+                    <td style="@LH">Change Request Submitted By</td>
+                    <td style="@VH">@Model.DeveloperName</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Change Request Description</td>
+                    <td style="@VH">@Model.Description</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Business Justification</td>
+                    <td style="@VH">@Model.BusinessJustification</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Change Request Category</td>
+                    <td style="@VH">@Model.Category</td>
+                </tr>
+            </table>
+        </div>
 
-        <!-- APPROVE / REJECT SECTION -->
+        <!-- ══ SECTION 3: Impact & Proposed Response ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH">
+                <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                    Change Request Impact &amp; Proposed Response <span style="font-weight:400;font-size:0.82rem">(from submitting party's perspective)</span>
+                </h3>
+            </div>
+            <table style="@ST">
+                <tr>
+                    <td style="@LH;font-style:italic">
+                        Areas Impacted<br/><small style="font-size:0.75rem">(if change is implemented as requested)</small>
+                    </td>
+                    <td style="@VH">
+                        <strong>Environment:</strong> @Model.Environment &nbsp;|&nbsp;
+                        <strong>Application:</strong> @Model.ApplicationName &nbsp;|&nbsp;
+                        <strong>Developer:</strong> @Model.DeveloperName
+                    </td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">
+                        Impact Description<br/><small style="font-size:0.75rem">(if change is implemented as requested)</small>
+                    </td>
+                    <td style="@VH">@(Model.ImpactDescription ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">Impact of Not Making the Change</td>
+                    <td style="@VH">@(Model.ImpactIfNotDone ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">Timeline of Impact Occurrence</td>
+                    <td style="@VH">@(Model.ImpactTimeline ?? $"Immediate upon deployment to {Model.Environment}")</td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">
+                        Recommended Strategy<br/><small style="font-size:0.75rem">(to implement the requested change)</small>
+                    </td>
+                    <td style="@VH">@(Model.RecommendedStrategy ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">
+                        Cost/Resource/Time Requirements<br/><small style="font-size:0.75rem">(to implement the requested change)</small>
+                    </td>
+                    <td style="@VH">@(Model.CostResourceTime ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH;font-style:italic">
+                        Expected Outcome<br/><small style="font-size:0.75rem">(of implementing the requested change)</small>
+                    </td>
+                    <td style="@VH">@(Model.ExpectedOutcome ?? "—")</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ══ SECTION 4: Detailed Assessment ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH">
+                <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                    Detailed Change Request Assessment <span style="font-weight:400;font-size:0.82rem">(completed by Project Manager or appointed representative)</span>
+                </h3>
+            </div>
+            <table style="@ST">
+                <tr>
+                    <td style="@LH">Change Request Assessment Assigned To</td>
+                    <td style="@VH">@(Model.AssessmentAssignedTo ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Tasks Affected</td>
+                    <td style="@VH">@(Model.TasksAffected ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Stakeholders Affected</td>
+                    <td style="@VH">@(Model.StakeholdersAffected ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Options Considered</td>
+                    <td style="@VH">@(Model.OptionsConsidered ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Recommended Actions &amp; Action Plan</td>
+                    <td style="@VH">@(Model.RecommendedActions ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Impact on Scope / Quality / Performance</td>
+                    <td style="@VH">@(Model.ImpactOnScope ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Impact on Schedule</td>
+                    <td style="@VH">@(Model.ImpactOnSchedule ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Additional Resources Required</td>
+                    <td style="@VH">@(Model.AdditionalResources ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Additional Cost</td>
+                    <td style="@VH">@(Model.AdditionalCost ?? "—")</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ══ SECTION 5: Deployment Plan ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Deployment Plan</h3></div>
+            <table style="@ST">
+                <tr>
+                    <td style="@LH">Recommended Implementation Start Date</td>
+                    <td style="@VH">@Model.DeploymentDate.ToString("dd/MM/yyyy")</td>
+                    <td style="@LH;width:28%">Recommended Implementation Completion Date</td>
+                    <td style="@VH">@(Model.DeploymentEndDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Deployment Window</td>
+                    <td style="@VH">@(Model.DeploymentWindow ?? "—")</td>
+                    <td style="@LH">Person(s) Responsible for Leading Implementation</td>
+                    <td style="@VH">@(Model.ImplementationLead ?? Model.DeveloperName)</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Test Plan</td>
+                    <td style="@VH" colspan="3">@(Model.TestPlan ?? "—")</td>
+                </tr>
+                <tr>
+                    <td style="@LH">Rollback Plan</td>
+                    <td style="@VH" colspan="3">@(Model.RollbackPlan ?? "—")</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ══ SECTION 6: Approvals ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Approvals</h3></div>
+
+            <div style="padding:8px 14px;border-bottom:1px solid #d0d0d0;font-size:0.87rem">
+                <strong>Status:</strong>&nbsp;&nbsp;
+                <span style="margin-right:20px">
+                    @(Model.Status == ChangeRequestStatus.Manager2Approved || Model.Status == ChangeRequestStatus.Deployed ? "☑" : "☐")
+                    Approved as Requested
+                </span>
+                <span style="margin-right:20px">
+                    @(Model.Status == ChangeRequestStatus.Manager1Approved ? "☑" : "☐")
+                    Approved with Changes
+                </span>
+                <span>
+                    @(Model.Status == ChangeRequestStatus.Rejected ? "☑" : "☐")
+                    Rejected
+                </span>
+            </div>
+
+            <table style="@ST">
+                <tr>
+                    <td colspan="4" style="background:#f2f2f2;font-weight:700;padding:6px 12px;border:1px solid #d0d0d0">Authorisation(s)</td>
+                </tr>
+                <tr>
+                    <td style="background:#f2f2f2;font-weight:700;padding:6px 12px;border:1px solid #d0d0d0;width:25%">Name(s)</td>
+                    <td style="background:#f2f2f2;font-weight:700;padding:6px 12px;border:1px solid #d0d0d0;width:20%">Role</td>
+                    <td style="background:#f2f2f2;font-weight:700;padding:6px 12px;border:1px solid #d0d0d0;width:18%">Date(s)</td>
+                    <td style="background:#f2f2f2;font-weight:700;padding:6px 12px;border:1px solid #d0d0d0">Comments</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0;min-height:36px">@(Model.Manager1Name ?? "")</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0;color:#555;font-style:italic">Manager 1</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0">@(Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy") ?? "")</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0">@(Model.Manager1Comments ?? "")</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0;min-height:36px">@(Model.Manager2Name ?? "")</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0;color:#555;font-style:italic">Manager 2</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0">@(Model.Manager2ApprovedAt?.ToString("dd/MM/yyyy") ?? "")</td>
+                    <td style="padding:10px 12px;border:1px solid #d0d0d0">@(Model.Manager2Comments ?? "")</td>
+                </tr>
+                @if (Model.Status == ChangeRequestStatus.Rejected)
+                {
+                    <tr>
+                        <td colspan="4" style="padding:8px 12px;border:1px solid #d0d0d0;background:#fff5f5">
+                            <strong style="color:#dc3545">Rejected by @Model.RejectedByName</strong>
+                            on @Model.RejectedAt?.ToString("dd/MM/yyyy HH:mm") —
+                            <em>@Model.RejectionReason</em>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+        <!-- ══ SECTION 7: Implementation Tracking ══ -->
+        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Change Request Implementation Tracking</h3></div>
+            <table style="@ST">
+                <tr>
+                    <td style="@LH">Responsible</td>
+                    <td style="@VH">@Model.DeveloperName</td>
+                    <td style="@LH;width:28%">Target Completion Date</td>
+                    <td style="@VH">@(Model.DeploymentEndDate?.ToString("dd/MM/yyyy") ?? Model.DeploymentDate.ToString("dd/MM/yyyy"))</td>
+                </tr>
+                <tr>
+                    <td style="@LH">
+                        Change Request Implementation<br/>
+                        Actions Taken &amp; Results Achieved
+                    </td>
+                    <td colspan="3" style="@VH">
+                        @{
+                            var entries = new List<(string Date, string Action, string Involved, string Result)>();
+                            entries.Add((
+                                Model.DateSubmitted.ToString("dd/MM/yyyy"),
+                                $"Change request \"{Model.Name}\" submitted for review.",
+                                Model.DeveloperName,
+                                "Requirements documented and submitted for approval."
+                            ));
+                            if (Model.Manager1ApprovedAt.HasValue)
+                                entries.Add((
+                                    Model.Manager1ApprovedAt.Value.ToString("dd/MM/yyyy"),
+                                    "Manager 1 reviewed and approved the change request.",
+                                    Model.Manager1Name ?? "",
+                                    $"Approved by Manager 1.{(string.IsNullOrEmpty(Model.Manager1Comments) ? "" : " Comments: " + Model.Manager1Comments)}"
+                                ));
+                            if (Model.Manager2ApprovedAt.HasValue)
+                                entries.Add((
+                                    Model.Manager2ApprovedAt.Value.ToString("dd/MM/yyyy"),
+                                    "Manager 2 final review completed.",
+                                    Model.Manager2Name ?? "",
+                                    $"Fully approved. Ready for production deployment.{(string.IsNullOrEmpty(Model.Manager2Comments) ? "" : " Comments: " + Model.Manager2Comments)}"
+                                ));
+                            if (Model.DeployedAt.HasValue)
+                                entries.Add((
+                                    Model.DeployedAt.Value.ToString("dd/MM/yyyy"),
+                                    $"Change deployed to {Model.Environment} environment.",
+                                    Model.DeveloperName,
+                                    "Successfully deployed and operational."
+                                ));
+                            if (Model.Status == ChangeRequestStatus.Rejected && Model.RejectedAt.HasValue)
+                                entries.Add((
+                                    Model.RejectedAt.Value.ToString("dd/MM/yyyy"),
+                                    "Change request rejected.",
+                                    Model.RejectedByName ?? "",
+                                    $"Rejected. Reason: {Model.RejectionReason}"
+                                ));
+                        }
+                        @foreach (var entry in entries)
+                        {
+                            <div style="margin-bottom:12px">
+                                <strong>• @entry.Date:</strong><br />
+                                <strong>Action:</strong> @entry.Action<br />
+                                <strong>Involved:</strong> @entry.Involved<br />
+                                <strong>Result:</strong> @entry.Result
+                            </div>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td style="@LH">Status</td>
+                    <td colspan="3" style="@VH;font-weight:700">
+                        @(Model.Status switch {
+                            ChangeRequestStatus.Deployed         => "Successfully Deployed",
+                            ChangeRequestStatus.Manager2Approved => "Ready for Production Deployment",
+                            ChangeRequestStatus.Manager1Approved => "Awaiting Manager 2 Approval",
+                            ChangeRequestStatus.Rejected         => "Rejected",
+                            _                                    => "Pending Approval"
+                        })
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ══ APPROVE / REJECT ══ -->
         @if (canApprove)
         {
-            <div class="detail-section card-action" style="border:2px solid #e6b000">
+            <div class="detail-section card-action" style="border:2px solid #e6b000;margin-bottom:16px">
                 <h3 class="detail-section-title">
-                    @if (canApproveM1)
-                    {
-                        <span>Manager 1 — Your Decision</span>
-                    }
-                    else
-                    {
-                        <span>Manager 2 — Your Final Decision</span>
-                    }
+                    @if (canApproveM1) { <span>Manager 1 — Your Decision</span> }
+                    else              { <span>Manager 2 — Your Final Decision</span> }
                 </h3>
 
                 @if (canApproveM2 && Model.Manager1ApprovedAt.HasValue)
                 {
                     <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
-                                        padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
+                                padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
                         ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
-                        @Model.Manager1ApprovedAt?.ToString("yyyy-MM-dd HH:mm")
+                        @Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy HH:mm")
                         @if (!string.IsNullOrEmpty(Model.Manager1Comments))
-                        {
-                            <span>— "@Model.Manager1Comments"</span>
-                        }
+                        { <span>— "@Model.Manager1Comments"</span> }
                     </div>
                 }
 
                 <div class="form-group" style="margin-bottom:16px">
                     <label style="font-size:0.78rem;font-weight:600;text-transform:uppercase;
-                                      letter-spacing:0.07em;color:#6b7280;display:block;margin-bottom:6px">
+                                  letter-spacing:0.07em;color:#6b7280;display:block;margin-bottom:6px">
                         Comments (optional)
                     </label>
                     <textarea id="sharedComments" class="form-input" rows="3"
-                          placeholder="Add any comments about your decision..."></textarea>
+                              placeholder="Add any comments about your decision..."></textarea>
                 </div>
 
-                <div class="action-buttons" style="display:flex;gap:10px;margin-bottom:12px">
-
+                <div style="display:flex;gap:10px;margin-bottom:12px">
+                    <!-- APPROVE — own form -->
                     <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
                         <input type="hidden" name="CRId" value="@Model.CRId" />
                         <input type="hidden" name="Approved" value="true" />
                         <input type="hidden" name="Comments" id="approveComments" value="" />
-                        <button type="submit" class="btn-approve"
-                                style="width:100%;padding:14px;font-size:1rem"
+                        <button type="submit" class="btn-approve" style="width:100%;padding:14px;font-size:1rem"
                                 onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
                             ✓ Approve
                         </button>
                     </form>
-
+                    <!-- REJECT — shows panel only -->
                     <button type="button" id="showRejectBtn" class="btn-reject"
                             style="flex:1;padding:14px;font-size:1rem"
                             onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
@@ -219,34 +454,32 @@
                     </button>
                 </div>
 
+                <!-- REJECT panel — own form -->
                 <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #dc3545;
-                                                 border-radius:10px;padding:16px;margin-top:8px">
+                                             border-radius:10px;padding:16px;margin-top:8px">
                     <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
                         <input type="hidden" name="CRId" value="@Model.CRId" />
                         <input type="hidden" name="Approved" value="false" />
                         <input type="hidden" name="Comments" id="rejectComments" value="" />
-
                         <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
-                                          letter-spacing:0.07em;color:#dc3545;display:block;margin-bottom:8px">
+                                      letter-spacing:0.07em;color:#dc3545;display:block;margin-bottom:8px">
                             ⚠ Rejection Reason (required)
                         </label>
                         <textarea name="RejectionReason" class="form-input" rows="3" required
-                              placeholder="Please state clearly why this request is being rejected..."
-                              style="border-color:#dc3545;margin-bottom:12px"></textarea>
-
+                                  placeholder="Please state clearly why this request is being rejected..."
+                                  style="border-color:#dc3545;margin-bottom:12px"></textarea>
                         <div style="display:flex;gap:10px">
-                            <button type="submit" class="btn-reject-confirm"
-                                    style="flex:1;padding:12px"
+                            <button type="submit" class="btn-reject-confirm" style="flex:1;padding:12px"
                                     onclick="document.getElementById('rejectComments').value = document.getElementById('sharedComments').value">
                                 Confirm Rejection
                             </button>
                             <button type="button"
                                     style="flex:1;padding:12px;background:#fff;border:2px solid #6b7280;
-                                               border-radius:10px;cursor:pointer;font-weight:600;color:#6b7280"
+                                           border-radius:10px;cursor:pointer;font-weight:600;color:#6b7280"
                                     onclick="document.getElementById('rejectPanel').style.display='none';
-                                                 document.getElementById('showRejectBtn').style.display='block'">
+                                             document.getElementById('showRejectBtn').style.display='block'">
                                 Cancel
                             </button>
                         </div>
@@ -254,12 +487,12 @@
                 </div>
             </div>
         }
+
     </div>
 
     <!-- RIGHT: Sidebar -->
     <div class="details-sidebar">
 
-        <!-- Deployment status -->
         <div class="sidebar-card @(Model.Status == ChangeRequestStatus.Deployed ? "card-deployed" : crService.IsDeploymentAllowed(Model) ? "card-allowed" : "card-blocked")">
             <div class="card-icon">
                 @(Model.Status == ChangeRequestStatus.Deployed ? "🚀" : crService.IsDeploymentAllowed(Model) ? "✅" : "🔒")
@@ -267,23 +500,34 @@
             <div class="card-text">
                 <strong>
                     @(Model.Status == ChangeRequestStatus.Deployed ? "Deployed"
-                                        : crService.IsDeploymentAllowed(Model) ? "Deployment Allowed"
-                                        : "Deployment Blocked")
+                    : crService.IsDeploymentAllowed(Model) ? "Deployment Allowed"
+                    : "Deployment Blocked")
                 </strong>
                 <small>
                     @(crService.IsDeploymentAllowed(Model)
-                                        ? "All approvals received"
-                                        : $"Status: {Model.Status}")
+                    ? "All approvals received"
+                    : $"Status: {Model.Status}")
                 </small>
             </div>
         </div>
 
-        <!-- Approval Trail -->
+        <div class="sidebar-card">
+            <h4>CR Summary</h4>
+            <dl class="detail-list" style="font-size:0.82rem">
+                <dt>CR ID</dt>       <dd><strong>@Model.CRId</strong></dd>
+                <dt>Application</dt> <dd>@Model.ApplicationName</dd>
+                <dt>Category</dt>    <dd>@Model.Category</dd>
+                <dt>Priority</dt>    <dd><span class="badge @crService.GetPriorityBadgeClass(Model.Priority)">@Model.Priority</span></dd>
+                <dt>Impact</dt>      <dd>@Model.Impact</dd>
+                <dt>Environment</dt> <dd>@Model.Environment</dd>
+                <dt>Submitted by</dt><dd>@Model.DeveloperName</dd>
+                <dt>Status</dt>      <dd><span class="badge @crService.GetStatusBadgeClass(Model.Status)">@Model.Status</span></dd>
+            </dl>
+        </div>
+
         <div class="sidebar-card">
             <h4>Approval Trail</h4>
             <div class="approval-trail">
-
-                <!-- Manager 1 -->
                 <div class="trail-item @(Model.Manager1ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null ? "trail-rejected" : "trail-pending")">
                     <div class="trail-icon">
                         @(Model.Manager1ApprovedAt.HasValue ? "✓" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null ? "✕" : "○")
@@ -293,26 +537,15 @@
                         @if (Model.Manager1ApprovedAt.HasValue)
                         {
                             <small>@Model.Manager1Name</small>
-                            <small>@Model.Manager1ApprovedAt?.ToString("yyyy-MM-dd HH:mm")</small>
-                            if (!string.IsNullOrEmpty(Model.Manager1Comments))
-                            {
-                                <em>"@Model.Manager1Comments"</em>
-                            }
+                            <small>@Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy HH:mm")</small>
+                            if (!string.IsNullOrEmpty(Model.Manager1Comments)) { <em>"@Model.Manager1Comments"</em> }
                         }
                         else if (Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt == null)
-                        {
-                            <small style="color:#dc3545">Rejected by @Model.RejectedByName</small>
-                        }
-                        else
-                        {
-                            <small>Awaiting approval</small>
-                        }
+                        { <small style="color:#dc3545">Rejected by @Model.RejectedByName</small> }
+                        else { <small>Awaiting approval</small> }
                     </div>
                 </div>
-
                 <div class="trail-connector"></div>
-
-                <!-- Manager 2 -->
                 <div class="trail-item @(Model.Manager2ApprovedAt.HasValue ? "trail-done" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null ? "trail-rejected" : "trail-pending")">
                     <div class="trail-icon">
                         @(Model.Manager2ApprovedAt.HasValue ? "✓" : Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null ? "✕" : "○")
@@ -322,33 +555,22 @@
                         @if (Model.Manager2ApprovedAt.HasValue)
                         {
                             <small>@Model.Manager2Name</small>
-                            <small>@Model.Manager2ApprovedAt?.ToString("yyyy-MM-dd HH:mm")</small>
-                            if (!string.IsNullOrEmpty(Model.Manager2Comments))
-                            {
-                                <em>"@Model.Manager2Comments"</em>
-                            }
+                            <small>@Model.Manager2ApprovedAt?.ToString("dd/MM/yyyy HH:mm")</small>
+                            if (!string.IsNullOrEmpty(Model.Manager2Comments)) { <em>"@Model.Manager2Comments"</em> }
                         }
                         else if (Model.Status == ChangeRequestStatus.Rejected && Model.Manager1ApprovedAt != null)
-                        {
-                            <small style="color:#dc3545">Rejected by @Model.RejectedByName</small>
-                        }
-                        else
-                        {
-                            <small>Awaiting approval</small>
-                        }
+                        { <small style="color:#dc3545">Rejected by @Model.RejectedByName</small> }
+                        else { <small>Awaiting approval</small> }
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Mark as Deployed -->
         @if (canMarkDeployed)
         {
             <div class="sidebar-card card-action">
                 <h4>🚀 Deployment</h4>
-                <p style="font-size:0.82rem;color:#6b7280;margin-bottom:12px">
-                    Fully approved. Ready to deploy.
-                </p>
+                <p style="font-size:0.82rem;color:#6b7280;margin-bottom:12px">Fully approved. Ready to deploy.</p>
                 <form asp-controller="ChangeRequests" asp-action="MarkDeployed" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.Id" />
@@ -360,7 +582,6 @@
             </div>
         }
 
-        <!-- Jenkins -->
         <div class="sidebar-card card-code">
             <h4>Jenkins Integration</h4>
             <code class="code-block">CR_ID=@Model.CRId</code>

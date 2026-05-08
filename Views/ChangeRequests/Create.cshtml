@@ -7,8 +7,8 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">New Change Request</h1>
-        <p class="page-subtitle">Submit a new change for review and approval</p>
+        <h1 class="page-title">Project Change Request</h1>
+        <p class="page-subtitle">City of Johannesburg Municipality Property Branch</p>
     </div>
     <a href="/Dashboard" class="btn-secondary">← Back</a>
 </div>
@@ -19,22 +19,21 @@
 
     <div class="form-sections">
 
-        <!-- Section 1: Core Details -->
+        <!-- ══ SECTION 1: Change Request Identification — UNCHANGED ══ -->
         <div class="form-section">
-            <div class="section-header">
+            <div class="section-header" style="background:#d9d9d9;border:1px solid #a6a6a6;padding:8px 12px;margin-bottom:0">
                 <span class="section-num">01</span>
-                <h2>Change Details</h2>
+                <h2 style="margin:0;font-size:1rem">Change Request Identification</h2>
             </div>
-            <div class="form-grid">
+            <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
                 <div class="form-group col-2">
-                    <label asp-for="Name">Change Request Name *</label>
-                    <input asp-for="Name" class="form-input" placeholder="e.g. Liquid v3.0" />
+                    <label asp-for="Name" style="font-weight:700">Change Request Name *</label>
+                    <input asp-for="Name" class="form-input" placeholder="e.g. Send Email Notification for Awaiting Information Status" />
                     <span asp-validation-for="Name" class="field-error"></span>
                 </div>
                 <div class="form-group col-2">
-                    <label asp-for="ApplicationName">Application / System *</label>
-                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)"
-                            style="margin-bottom:8px">
+                    <label asp-for="ApplicationName" style="font-weight:700">Application / System *</label>
+                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)" style="margin-bottom:8px">
                         <option value="">Select application...</option>
                         <option>Liquid</option>
                         <option>Zebra</option>
@@ -47,144 +46,274 @@
                         <option>Notices</option>
                         <option>Verification</option>
                         <option>SearchPacks</option>
-                        <option value="Other">Other</option>
+                        <option value="Other">Other (type below)</option>
                     </select>
                     <input asp-for="ApplicationName" id="appNameInput" class="form-input"
-                           placeholder="Type application name..."
-                           style="display:none"
-                           autocomplete="off" />
+                           placeholder="Type application / project name..."
+                           style="display:none" autocomplete="off" />
                     <span asp-validation-for="ApplicationName" class="field-error"></span>
                 </div>
                 <div class="form-group col-1">
-                    <label asp-for="Category">Category *</label>
-                    <select asp-for="Category" class="form-input" asp-items="Html.GetEnumSelectList<ChangeCategory>()">
-                        <option value="">Select...</option>
-                    </select>
-                    <span asp-validation-for="Category" class="field-error"></span>
-                </div>
-                <div class="form-group col-1">
-                    <label asp-for="Priority">Priority *</label>
+                    <label asp-for="Priority" style="font-weight:700">Priority *</label>
                     <select asp-for="Priority" class="form-input" asp-items="Html.GetEnumSelectList<Priority>()">
                         <option value="">Select...</option>
                     </select>
                     <span asp-validation-for="Priority" class="field-error"></span>
                 </div>
                 <div class="form-group col-1">
-                    <label asp-for="Impact">Impact Level *</label>
+                    <label asp-for="Impact" style="font-weight:700">Impact Level *</label>
                     <select asp-for="Impact" class="form-input" asp-items="Html.GetEnumSelectList<ImpactLevel>()">
                         <option value="">Select...</option>
                     </select>
                     <span asp-validation-for="Impact" class="field-error"></span>
                 </div>
                 <div class="form-group col-1">
-                    <label asp-for="Environment">Environment</label>
+                    <label asp-for="Category" style="font-weight:700">Change Request Category *</label>
+                    <select asp-for="Category" class="form-input" asp-items="Html.GetEnumSelectList<ChangeCategory>()">
+                        <option value="">Select...</option>
+                    </select>
+                    <span asp-validation-for="Category" class="field-error"></span>
+                </div>
+                <div class="form-group col-1">
+                    <label asp-for="Environment" style="font-weight:700">Environment</label>
                     <select asp-for="Environment" class="form-input">
                         <option>Production</option>
-                        @* <option>Staging</option> *@
                         <option>UAT</option>
-                       @*  <option>Development</option> *@
                     </select>
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: Description -->
+        <!-- ══ SECTION 2: Change Request Description ══ -->
         <div class="form-section">
-            <div class="section-header">
+            <div class="section-header" style="background:#d9d9d9;border:1px solid #a6a6a6;padding:8px 12px;margin-bottom:0">
                 <span class="section-num">02</span>
-                <h2>Description & Justification</h2>
+                <h2 style="margin:0;font-size:1rem">Change Request Description <span style="font-weight:400;font-size:0.85rem">(completed by the submitting party)</span></h2>
             </div>
-            <div class="form-grid">
+            <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
                 <div class="form-group col-2">
-                    <label asp-for="Description">Description *</label>
-                    <textarea asp-for="Description" class="form-input" rows="4" placeholder="Describe what changes will be made..."></textarea>
+                    <label asp-for="Description" style="font-weight:700">Change Request Description *</label>
+                    <textarea asp-for="Description" class="form-input" rows="5"
+                              placeholder="Describe what changes will be made and what the system will do differently..."></textarea>
                     <span asp-validation-for="Description" class="field-error"></span>
                 </div>
                 <div class="form-group col-2">
-                    <label asp-for="BusinessJustification">Business Justification *</label>
-                    <textarea asp-for="BusinessJustification" class="form-input" rows="3" placeholder="Why is this change necessary?"></textarea>
+                    <label asp-for="BusinessJustification" style="font-weight:700">Business Justification *</label>
+                    <textarea asp-for="BusinessJustification" class="form-input" rows="4"
+                              placeholder="Why is this change necessary? What problem does it solve?"></textarea>
                     <span asp-validation-for="BusinessJustification" class="field-error"></span>
-                </div>
-                <div class="form-group col-2">
-                    <label asp-for="ImpactDescription">Impact Description</label>
-                    <input asp-for="ImpactDescription" class="form-input" placeholder="What systems/users will be affected?" />
                 </div>
             </div>
         </div>
 
-        <!-- Section 3: Deployment -->
+        <!-- ══ SECTION 3: Impact & Proposed Response ══ -->
         <div class="form-section">
-            <div class="section-header">
+            <div class="section-header" style="background:#d9d9d9;border:1px solid #a6a6a6;padding:8px 12px;margin-bottom:0">
                 <span class="section-num">03</span>
-                <h2>Deployment Plan</h2>
+                <h2 style="margin:0;font-size:1rem">Change Request Impact &amp; Proposed Response <span style="font-weight:400;font-size:0.85rem">(from submitting party's perspective)</span></h2>
             </div>
-            <div class="form-grid">
+            <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
+
+                <div class="form-group col-2">
+                    <label asp-for="ImpactDescription" style="font-weight:700">
+                        Impact Description
+                        <span style="font-weight:400;font-size:0.8rem">(if change is implemented as requested)</span>
+                    </label>
+                    <textarea asp-for="ImpactDescription" class="form-input" rows="3"
+                              placeholder="Who and what will be impacted? e.g. Clients will receive immediate notifications..."></textarea>
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="ImpactIfNotDone" style="font-weight:700">
+                        Impact of Not Making the Change
+                    </label>
+                    <textarea asp-for="ImpactIfNotDone" class="form-input" rows="3"
+                              placeholder="What risks or inefficiencies will persist if this change is not made?"></textarea>
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="ImpactTimeline" style="font-weight:700">Timeline of Impact Occurrence</label>
+                    <input asp-for="ImpactTimeline" class="form-input"
+                           placeholder="e.g. Immediate upon deployment to Production" />
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="RecommendedStrategy" style="font-weight:700">
+                        Recommended Strategy
+                        <span style="font-weight:400;font-size:0.8rem">(to implement the requested change)</span>
+                    </label>
+                    <textarea asp-for="RecommendedStrategy" class="form-input" rows="3"
+                              placeholder="e.g. Requirements Gathering, Design, Development, Testing, Deployment..."></textarea>
+                </div>
+
                 <div class="form-group col-1">
-                    <label asp-for="DeploymentDate">Deployment Date *</label>
+                    <label asp-for="CostResourceTime" style="font-weight:700">Cost / Resource / Time Requirements</label>
+                    <textarea asp-for="CostResourceTime" class="form-input" rows="3"
+                              placeholder="e.g. Estimated 2 days development. IT team only. No additional cost."></textarea>
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="ExpectedOutcome" style="font-weight:700">
+                        Expected Outcome
+                        <span style="font-weight:400;font-size:0.8rem">(of implementing the requested change)</span>
+                    </label>
+                    <textarea asp-for="ExpectedOutcome" class="form-input" rows="3"
+                              placeholder="e.g. Improved client communication, reduced follow-ups..."></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ══ SECTION 4: Detailed Assessment ══ -->
+        <div class="form-section">
+            <div class="section-header" style="background:#d9d9d9;border:1px solid #a6a6a6;padding:8px 12px;margin-bottom:0">
+                <span class="section-num">04</span>
+                <h2 style="margin:0;font-size:1rem">Detailed Change Request Assessment <span style="font-weight:400;font-size:0.85rem">(completed by Project Manager or appointed representative)</span></h2>
+            </div>
+            <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
+
+                <div class="form-group col-2">
+                    <label asp-for="AssessmentAssignedTo" style="font-weight:700">Change Request Assessment Assigned To</label>
+                    <input asp-for="AssessmentAssignedTo" class="form-input" placeholder="Name of the project manager or assigned person" />
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="TasksAffected" style="font-weight:700">
+                        Tasks Affected
+                        <span style="font-weight:400;font-size:0.8rem">(affected tasks, benefits, resource requirements, schedule impact)</span>
+                    </label>
+                    <textarea asp-for="TasksAffected" class="form-input" rows="3"
+                              placeholder="e.g. Email Trigger Development — Automated notification to clients — IT resources — Minimal schedule impact"></textarea>
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="StakeholdersAffected" style="font-weight:700">
+                        Stakeholders Affected
+                        <span style="font-weight:400;font-size:0.8rem">(stakeholders, benefits/impacts, actions required)</span>
+                    </label>
+                    <textarea asp-for="StakeholdersAffected" class="form-input" rows="3"
+                              placeholder="e.g. Valuation Admin — Reduced manual follow-ups — Validate email content"></textarea>
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="OptionsConsidered" style="font-weight:700">
+                        Options Considered
+                        <span style="font-weight:400;font-size:0.8rem">(describe options, pros and cons of each)</span>
+                    </label>
+                    <textarea asp-for="OptionsConsidered" class="form-input" rows="3"
+                              placeholder="Option 1: ... Pros: ... Cons: ..."></textarea>
+                </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="RecommendedActions" style="font-weight:700">Recommended Actions &amp; Action Plan</label>
+                    <textarea asp-for="RecommendedActions" class="form-input" rows="4"
+                              placeholder="1. Identify trigger&#10;2. Develop logic&#10;3. Test&#10;4. Deploy"></textarea>
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="ImpactOnScope" style="font-weight:700">Impact on Scope / Quality / Performance</label>
+                    <input asp-for="ImpactOnScope" class="form-input" placeholder="e.g. Minimal — enhancement to existing functionality" />
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="ImpactOnSchedule" style="font-weight:700">Impact on Schedule</label>
+                    <input asp-for="ImpactOnSchedule" class="form-input" placeholder="e.g. Extends timeline by approximately 3 days" />
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="AdditionalResources" style="font-weight:700">Additional Resources Required</label>
+                    <input asp-for="AdditionalResources" class="form-input" placeholder="e.g. None beyond current team" />
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="AdditionalCost" style="font-weight:700">Additional Cost</label>
+                    <input asp-for="AdditionalCost" class="form-input" placeholder="e.g. No additional significant costs" />
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ══ SECTION 5: Deployment Plan ══ -->
+        <div class="form-section">
+            <div class="section-header" style="background:#d9d9d9;border:1px solid #a6a6a6;padding:8px 12px;margin-bottom:0">
+                <span class="section-num">05</span>
+                <h2 style="margin:0;font-size:1rem">Deployment Plan</h2>
+            </div>
+            <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
+
+                <div class="form-group col-1">
+                    <label asp-for="DeploymentDate" style="font-weight:700">Recommended Implementation Start Date *</label>
                     <input asp-for="DeploymentDate" type="date" class="form-input" />
                     <span asp-validation-for="DeploymentDate" class="field-error"></span>
                 </div>
+
                 <div class="form-group col-1">
-                    <label asp-for="DeploymentWindow">Deployment Window</label>
+                    <label asp-for="DeploymentEndDate" style="font-weight:700">Recommended Implementation Completion Date</label>
+                    <input asp-for="DeploymentEndDate" type="date" class="form-input" />
+                </div>
+
+                <div class="form-group col-1">
+                    <label asp-for="DeploymentWindow" style="font-weight:700">Deployment Window</label>
                     <input asp-for="DeploymentWindow" class="form-input" placeholder="e.g. 22:00 - 02:00" />
                 </div>
-                <div class="form-group col-2">
-                    <label asp-for="RollbackPlan">Rollback Plan</label>
-                    <textarea asp-for="RollbackPlan" class="form-input" rows="2" placeholder="Steps to revert if deployment fails..."></textarea>
+
+                <div class="form-group col-1">
+                    <label asp-for="ImplementationLead" style="font-weight:700">Person(s) Responsible for Leading Implementation</label>
+                    <input asp-for="ImplementationLead" class="form-input" placeholder="Name of person responsible" />
                 </div>
+
                 <div class="form-group col-2">
-                    <label asp-for="TestPlan">Test Plan</label>
-                    <textarea asp-for="TestPlan" class="form-input" rows="2" placeholder="How will you verify the change was successful?"></textarea>
+                    <label asp-for="TestPlan" style="font-weight:700">Test Plan</label>
+                    <textarea asp-for="TestPlan" class="form-input" rows="3"
+                              placeholder="How will you verify the change was successful? Functional testing, UAT, etc."></textarea>
                 </div>
+
+                <div class="form-group col-2">
+                    <label asp-for="RollbackPlan" style="font-weight:700">Rollback Plan</label>
+                    <textarea asp-for="RollbackPlan" class="form-input" rows="3"
+                              placeholder="Steps to revert if deployment fails..."></textarea>
+                </div>
+
             </div>
         </div>
 
     </div>
 
-    <div class="form-actions">
+    <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end">
         <a href="/Dashboard" class="btn-secondary">Cancel</a>
         <button type="submit" class="btn-primary">Submit Change Request</button>
     </div>
 </form>
+
 @section Scripts {
     <script>
         function handleAppChange(select) {
             const input = document.getElementById('appNameInput');
             if (select.value === 'Other') {
-                // Show text input, clear it, hide select value from model
                 input.style.display = 'block';
                 input.value = '';
                 input.focus();
-                // Remove name from select so only input submits
                 select.removeAttribute('name');
                 input.setAttribute('name', 'ApplicationName');
             } else {
-                // Hide text input, use select value
                 input.style.display = 'none';
                 input.removeAttribute('name');
                 select.setAttribute('name', 'ApplicationName');
-                // Set the hidden input value to match select
                 input.value = select.value;
             }
         }
 
-        // On page load — if ApplicationName already has a value (e.g. validation failed),
-        // check if it matches a known option, if not show the text input
         document.addEventListener('DOMContentLoaded', function () {
             const select = document.getElementById('appSelect');
             const input = document.getElementById('appNameInput');
             const currentValue = input.value;
-
             if (!currentValue) return;
-
-            // Check if current value matches any option
             const options = Array.from(select.options).map(o => o.value);
             if (options.includes(currentValue)) {
                 select.value = currentValue;
                 select.setAttribute('name', 'ApplicationName');
                 input.removeAttribute('name');
             } else {
-                // It's a custom value — show text input
                 select.value = 'Other';
                 input.style.display = 'block';
                 input.setAttribute('name', 'ApplicationName');
