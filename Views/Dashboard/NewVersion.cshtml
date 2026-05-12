@@ -1,0 +1,347 @@
+﻿@using Change_order.Models
+@model ChangeRequest
+
+@{
+    ViewData["Title"] = "Create New Version";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Create New Version</h1>
+
+        <p class="page-subtitle">
+            Based on previous CR:
+            <strong>@Model.CRId</strong>
+        </p>
+    </div>
+
+    <div class="header-actions">
+        <a asp-controller="ChangeRequests"
+           asp-action="Create"
+           class="btn-secondary">
+            + Fresh CR
+        </a>
+
+        <a asp-controller="Dashboard"
+           asp-action="Index"
+           class="btn-secondary">
+            ← Back
+        </a>
+    </div>
+</div>
+
+<form asp-controller="Dashboard"
+      asp-action="CreateNewVersion"
+      method="post">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" value="0" /><input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CRId" />
+    <input type="hidden" asp-for="ParentId" />
+    <input type="hidden" asp-for="GroupKey" />
+
+    <div asp-validation-summary="All"
+         class="text-danger"
+         style="margin-bottom:20px">
+    </div>
+
+    <div class="details-grid">
+
+        <!-- LEFT -->
+        <div class="details-main">
+
+            @{
+                string SH = "background:#d9d9d9;border-bottom:1px solid #a6a6a6;padding:8px 14px";
+                string ST = "width:100%;border-collapse:collapse;font-size:0.87rem";
+                string LH = "background:#f2f2f2;font-weight:700;padding:8px 12px;border:1px solid #d0d0d0;vertical-align:top;width:28%";
+                string VH = "padding:8px 12px;border:1px solid #d0d0d0";
+            }
+
+            <!-- SECTION 1 -->
+            <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+
+                <div style="@SH">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                        Change Request Identification
+                    </h3>
+                </div>
+
+                <table style="@ST">
+
+                    <tr>
+                        <td style="@LH">Application / System</td>
+
+                        <td style="@VH">
+                            <input asp-for="ApplicationName"
+                                   class="form-input"
+                                   style="width:100%" />
+
+                            <span asp-validation-for="ApplicationName"
+                                  class="text-danger"></span>
+                        </td>
+
+                        <td style="@LH">Environment</td>
+
+                        <td style="@VH">
+                            <select asp-for="Environment"
+                                    class="form-input">
+
+                                @* <option value="Development">Development</option>
+                                <option value="QA">QA</option> *@
+                                <option value="UAT">UAT</option>
+                                <option value="Production">Production</option>
+
+                            </select>
+
+                            <span asp-validation-for="Environment"
+                                  class="text-danger"></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Change Request Name</td>
+
+                        <td colspan="3" style="@VH">
+                            <input asp-for="Name"
+                                   class="form-input"
+                                   style="width:100%" />
+
+                            <span asp-validation-for="Name"
+                                  class="text-danger"></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Priority</td>
+
+                        <td style="@VH">
+                            <select asp-for="Priority"
+                                    asp-items="Html.GetEnumSelectList<Priority>()"
+                                    class="form-input">
+                            </select>
+                        </td>
+
+                        <td style="@LH">Impact</td>
+
+                        <td style="@VH">
+                            <select asp-for="Impact"
+                                    asp-items="Html.GetEnumSelectList<ImpactLevel>()"
+                                    class="form-input">
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Category</td>
+
+                        <td colspan="3" style="@VH">
+                            <select asp-for="Category"
+                                    asp-items="Html.GetEnumSelectList<ChangeCategory>()"
+                                    class="form-input">
+                            </select>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+            <!-- SECTION 2 -->
+            <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+
+                <div style="@SH">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                        Change Request Description
+                    </h3>
+                </div>
+
+                <table style="@ST">
+
+                    <tr>
+                        <td style="@LH">Description</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="Description"
+                                      rows="5"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger"></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Business Justification</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="BusinessJustification"
+                                      rows="4"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Areas Impacted</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="AreasImpacted"
+                                      rows="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Impact Description</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ImpactDescription"
+                                      rows="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+            <!-- SECTION 3 -->
+            <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+
+                <div style="@SH">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                        Deployment Plan
+                    </h3>
+                </div>
+
+                <table style="@ST">
+
+                    <tr>
+                        <td style="@LH">Deployment Date</td>
+
+                        <td style="@VH">
+                            <input asp-for="DeploymentDate"
+                                   type="date"
+                                   class="form-input" />
+                        </td>
+
+                        <td style="@LH">Deployment End Date</td>
+
+                        <td style="@VH">
+                            <input asp-for="DeploymentEndDate"
+                                   type="date"
+                                   class="form-input" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Deployment Window</td>
+
+                        <td colspan="3" style="@VH">
+                            <input asp-for="DeploymentWindow"
+                                   class="form-input"
+                                   style="width:100%" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Test Plan</td>
+
+                        <td colspan="3" style="@VH">
+                            <textarea asp-for="TestPlan"
+                                      rows="4"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Rollback Plan</td>
+
+                        <td colspan="3" style="@VH">
+                            <textarea asp-for="RollbackPlan"
+                                      rows="4"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div style="display:flex;gap:12px">
+
+                <button type="submit"
+                        class="btn-primary">
+                    Submit Change Request
+                </button>
+
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="btn-secondary"
+                   style="padding:14px 28px">
+                    Cancel
+                </a>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="details-sidebar">
+
+            <div class="sidebar-card">
+
+                <h4>Previous Change Request</h4>
+
+                <dl class="detail-list" style="font-size:0.82rem">
+
+                    <dt>CR ID</dt>
+                    <dd><strong>@Model.CRId</strong></dd>
+
+                    <dt>Name</dt>
+                    <dd>@Model.Name</dd>
+
+                    <dt>Application</dt>
+                    <dd>@Model.ApplicationName</dd>
+
+                    <dt>Environment</dt>
+                    <dd>@Model.Environment</dd>
+
+                    <dt>Status</dt>
+                    <dd>@Model.Status</dd>
+
+                    <dt>Developer</dt>
+                    <dd>@Model.DeveloperName</dd>
+
+                </dl>
+
+            </div>
+
+            <div class="sidebar-card card-code">
+
+                <h4>Version Notes</h4>
+
+                <p class="code-hint">
+                    This page creates a new version of the selected
+                    change request while reusing the previous data.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

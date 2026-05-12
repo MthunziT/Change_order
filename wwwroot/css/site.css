@@ -1358,3 +1358,26 @@ select.form-input {
 .cr-version-row td {
     border-bottom: 1px solid #f0f0f0;
 }
+
+.badge-pendingapproval {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+.btn-pending {
+    background: #ede9fe;
+    color: #6d28d9;
+    border: 1.5px solid #6d28d9;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.875rem;
+    flex: 1;
+    transition: all 0.2s;
+}
+
+    .btn-pending:hover {
+        background: #6d28d9;
+        color: #fff;
+    }

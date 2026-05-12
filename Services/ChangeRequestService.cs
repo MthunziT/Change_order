@@ -88,6 +88,7 @@ namespace Change_order.Services
             ChangeRequestStatus.Manager2Approved => "badge-approved",
             ChangeRequestStatus.Rejected => "badge-rejected",
             ChangeRequestStatus.Deployed => "badge-deployed",
+            ChangeRequestStatus.PendingApproval => "badge-pendingapproval",
             _ => "badge-pending"
         };
 

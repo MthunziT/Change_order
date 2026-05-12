@@ -41,5 +41,6 @@ namespace Change_order.Models
         public string Comments { get; set; } = string.Empty;
         public bool Approved { get; set; }
         public string? RejectionReason { get; set; }
+        public bool SetPendingApproval { get; set; }
     }
 }

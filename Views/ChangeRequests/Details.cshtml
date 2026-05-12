@@ -267,10 +267,10 @@
         </div>
 
         <!-- ══ SECTION 6: Approvals ══ -->
-        <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
-            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Approvals</h3></div>
+        @* <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+            <div style="@SH"><h3 style="margin:0;font-size:0.95rem;font-weight:700">Approvals</h3></div> *@
 
-            <div style="padding:8px 14px;border-bottom:1px solid #d0d0d0;font-size:0.87rem">
+            <@* div style="padding:8px 14px;border-bottom:1px solid #d0d0d0;font-size:0.87rem">
                 <strong>Status:</strong>&nbsp;&nbsp;
                 <span style="margin-right:20px">
                     @(Model.Status == ChangeRequestStatus.Manager2Approved || Model.Status == ChangeRequestStatus.Deployed ? "☑" : "☐")
@@ -284,7 +284,7 @@
                     @(Model.Status == ChangeRequestStatus.Rejected ? "☑" : "☐")
                     Rejected
                 </span>
-            </div>
+            </div> *@
 
             <table style="@ST">
                 <tr>
@@ -401,90 +401,169 @@
         </div>
 
         <!-- ══ APPROVE / REJECT ══ -->
-        @if (canApprove)
+       @if (canApprove)
+{
+    <div class="detail-section card-action" style="border:2px solid #e6b000;margin-bottom:16px">
+        <h3 class="detail-section-title">
+            @if (canApproveM1) { <span>Manager 1 — Your Decision</span> }
+            else               { <span>Manager 2 — Your Final Decision</span> }
+        </h3>
+
+        @if (Model.Status == ChangeRequestStatus.PendingApproval)
         {
-            <div class="detail-section card-action" style="border:2px solid #e6b000;margin-bottom:16px">
-                <h3 class="detail-section-title">
-                    @if (canApproveM1) { <span>Manager 1 — Your Decision</span> }
-                    else              { <span>Manager 2 — Your Final Decision</span> }
-                </h3>
-
-                @if (canApproveM2 && Model.Manager1ApprovedAt.HasValue)
-                {
-                    <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
-                                padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
-                        ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
-                        @Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy HH:mm")
-                        @if (!string.IsNullOrEmpty(Model.Manager1Comments))
-                        { <span>— "@Model.Manager1Comments"</span> }
-                    </div>
-                }
-
-                <div class="form-group" style="margin-bottom:16px">
-                    <label style="font-size:0.78rem;font-weight:600;text-transform:uppercase;
-                                  letter-spacing:0.07em;color:#6b7280;display:block;margin-bottom:6px">
-                        Comments (optional)
-                    </label>
-                    <textarea id="sharedComments" class="form-input" rows="3"
-                              placeholder="Add any comments about your decision..."></textarea>
-                </div>
-
-                <div style="display:flex;gap:10px;margin-bottom:12px">
-                    <!-- APPROVE — own form -->
-                    <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
-                        <input type="hidden" name="CRId" value="@Model.CRId" />
-                        <input type="hidden" name="Approved" value="true" />
-                        <input type="hidden" name="Comments" id="approveComments" value="" />
-                        <button type="submit" class="btn-approve" style="width:100%;padding:14px;font-size:1rem"
-                                onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
-                            ✓ Approve
-                        </button>
-                    </form>
-                    <!-- REJECT — shows panel only -->
-                    <button type="button" id="showRejectBtn" class="btn-reject"
-                            style="flex:1;padding:14px;font-size:1rem"
-                            onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
-                        ✕ Reject
-                    </button>
-                </div>
-
-                <!-- REJECT panel — own form -->
-                <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #dc3545;
-                                             border-radius:10px;padding:16px;margin-top:8px">
-                    <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="ChangeRequestId" value="@Model.Id" />
-                        <input type="hidden" name="CRId" value="@Model.CRId" />
-                        <input type="hidden" name="Approved" value="false" />
-                        <input type="hidden" name="Comments" id="rejectComments" value="" />
-                        <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
-                                      letter-spacing:0.07em;color:#dc3545;display:block;margin-bottom:8px">
-                            ⚠ Rejection Reason (required)
-                        </label>
-                        <textarea name="RejectionReason" class="form-input" rows="3" required
-                                  placeholder="Please state clearly why this request is being rejected..."
-                                  style="border-color:#dc3545;margin-bottom:12px"></textarea>
-                        <div style="display:flex;gap:10px">
-                            <button type="submit" class="btn-reject-confirm" style="flex:1;padding:12px"
-                                    onclick="document.getElementById('rejectComments').value = document.getElementById('sharedComments').value">
-                                Confirm Rejection
-                            </button>
-                            <button type="button"
-                                    style="flex:1;padding:12px;background:#fff;border:2px solid #6b7280;
-                                           border-radius:10px;cursor:pointer;font-weight:600;color:#6b7280"
-                                    onclick="document.getElementById('rejectPanel').style.display='none';
-                                             document.getElementById('showRejectBtn').style.display='block'">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <div style="background:#ede9fe;border:1px solid #6d28d9;border-radius:8px;
+                        padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
+                ⏳ <strong>This CR is awaiting developer action.</strong>
+                The developer has been asked to provide additional information before approval can proceed.
+                @if (canApproveM1 && !string.IsNullOrEmpty(Model.Manager1Comments))
+                { <div style="margin-top:6px"><em>Your comment: "@Model.Manager1Comments"</em></div> }
+                @if (canApproveM2 && !string.IsNullOrEmpty(Model.Manager2Comments))
+                { <div style="margin-top:6px"><em>Your comment: "@Model.Manager2Comments"</em></div> }
             </div>
         }
 
+        @if (canApproveM2 && Model.Manager1ApprovedAt.HasValue)
+        {
+            <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
+                        padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
+                ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
+                @Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy HH:mm")
+                @if (!string.IsNullOrEmpty(Model.Manager1Comments))
+                { <span>— "@Model.Manager1Comments"</span> }
+            </div>
+        }
+
+        <!-- Shared comments textarea -->
+        <div class="form-group" style="margin-bottom:12px">
+            <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                          letter-spacing:0.07em;color:#374151;display:block;margin-bottom:6px">
+                Comments
+                <span id="commentRequired" style="color:#dc3545;display:none"> * required for Pending Approval</span>
+            </label>
+            <textarea id="sharedComments" class="form-input" rows="3"
+                      placeholder="Add comments..."></textarea>
+        </div>
+
+        <!-- Three action buttons -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+
+            <!-- ✓ APPROVE -->
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1;min-width:120px">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
+                <input type="hidden" name="CRId"               value="@Model.CRId" />
+                <input type="hidden" name="Approved"           value="true" />
+                <input type="hidden" name="SetPendingApproval" value="false" />
+                <input type="hidden" name="Comments" id="approveComments" value="" />
+                <button type="submit" class="btn-approve" style="width:100%;padding:12px;font-size:0.9rem"
+                        onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
+                    ✓ Approve
+                </button>
+            </form>
+
+            <!-- ⏳ PENDING APPROVAL -->
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post"
+                  style="flex:1;min-width:140px" id="pendingForm"
+                  onsubmit="return validatePendingComment()">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
+                <input type="hidden" name="CRId"               value="@Model.CRId" />
+                <input type="hidden" name="Approved"           value="false" />
+                <input type="hidden" name="SetPendingApproval" value="true" />
+                <input type="hidden" name="Comments" id="pendingComments" value="" />
+                <button type="submit" class="btn-pending" style="width:100%;padding:12px;font-size:0.9rem"
+                        onclick="document.getElementById('pendingComments').value = document.getElementById('sharedComments').value;
+                                 document.getElementById('commentRequired').style.display='inline'">
+                    ⏳ Pending Approval
+                </button>
+            </form>
+
+            <!-- ✕ REJECT -->
+            <button type="button" id="showRejectBtn" class="btn-reject"
+                    style="flex:1;min-width:100px;padding:12px;font-size:0.9rem"
+                    onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
+                ✕ Reject
+            </button>
+        </div>
+
+        <!-- REJECT panel -->
+        <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #dc3545;
+                                     border-radius:10px;padding:16px;margin-top:8px">
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
+                <input type="hidden" name="CRId"               value="@Model.CRId" />
+                <input type="hidden" name="Approved"           value="false" />
+                <input type="hidden" name="SetPendingApproval" value="false" />
+                <input type="hidden" name="Comments" id="rejectComments" value="" />
+                <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                              letter-spacing:0.07em;color:#dc3545;display:block;margin-bottom:8px">
+                    ⚠ Rejection Reason (required)
+                </label>
+                <textarea name="RejectionReason" class="form-input" rows="3" required
+                          placeholder="Please state clearly why this request is being rejected..."
+                          style="border-color:#dc3545;margin-bottom:12px"></textarea>
+                <div style="display:flex;gap:10px">
+                    <button type="submit" class="btn-reject-confirm" style="flex:1;padding:12px"
+                            onclick="document.getElementById('rejectComments').value = document.getElementById('sharedComments').value">
+                        Confirm Rejection
+                    </button>
+                    <button type="button"
+                            style="flex:1;padding:12px;background:#fff;border:2px solid #6b7280;
+                                   border-radius:10px;cursor:pointer;font-weight:600;color:#6b7280"
+                            onclick="document.getElementById('rejectPanel').style.display='none';
+                                     document.getElementById('showRejectBtn').style.display='block'">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+}
+
+<!-- DEVELOPER — resubmit after Pending Approval -->
+@if (Model.Status == ChangeRequestStatus.PendingApproval
+     && currentUser.WindowsUsername == Model.DeveloperUserId)
+{
+    <div class="detail-section" style="border:2px solid #6d28d9;margin-bottom:16px;padding:16px">
+        <h3 style="font-size:0.95rem;font-weight:700;color:#6d28d9;margin-bottom:12px">
+            ⏳ Action Required — Additional Information Requested
+        </h3>
+
+        @{
+            var pendingComment = Model.Manager1Comments ?? Model.Manager2Comments;
+        }
+        @if (!string.IsNullOrEmpty(pendingComment))
+        {
+            <div style="background:#f5f3ff;border:1px solid #6d28d9;border-radius:8px;
+                        padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
+                <strong>Manager's request:</strong><br/>
+                <em>@pendingComment</em>
+            </div>
+        }
+
+        <p style="font-size:0.875rem;color:#374151;margin-bottom:14px">
+            Please review the manager's comment above, update the relevant sections of your change request,
+            then resubmit for approval.
+        </p>
+
+        <form asp-controller="ChangeRequests" asp-action="Resubmit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="form-group" style="margin-bottom:14px">
+                <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                              letter-spacing:0.07em;color:#374151;display:block;margin-bottom:6px">
+                    Your Response / Update (required)
+                </label>
+                <textarea name="DeveloperResponse" class="form-input" rows="4" required
+                          placeholder="Describe the changes you have made or the additional information requested..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary">
+                ↻ Resubmit for Approval
+            </button>
+        </form>
+    </div>
+}
 
     <!-- RIGHT: Sidebar -->
     <div class="details-sidebar">
@@ -586,3 +665,18 @@
 
     </div>
 </div>
+
+@section Scripts{
+<script>
+function validatePendingComment() {
+    const comment = document.getElementById('sharedComments').value.trim();
+    if (!comment) {
+        alert('A comment is required when setting status to Pending Approval. Please describe what additional information is needed from the developer.');
+        document.getElementById('sharedComments').focus();
+        return false;
+    }
+    document.getElementById('pendingComments').value = comment;
+    return true;
+}
+</script>
+}

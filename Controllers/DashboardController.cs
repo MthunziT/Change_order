@@ -87,6 +87,7 @@ namespace Change_order.Controllers
             // Pre-fill form with original data
             var newCr = new ChangeRequest
             {
+                CRId = original.CRId,
                 Name = original.Name,
                 ApplicationName = original.ApplicationName,
                 Description = original.Description,
@@ -116,13 +117,58 @@ namespace Change_order.Controllers
                 RollbackPlan = original.RollbackPlan,
                 ImplementationLead = original.ImplementationLead,
                 ParentId = original.ParentId ?? original.Id,
-                GroupKey = string.IsNullOrEmpty(original.GroupKey) ? $"{original.Name}|{original.ApplicationName}" : original.GroupKey
+                GroupKey = string.IsNullOrEmpty(original.GroupKey)
+                   ? $"{original.Name}|{original.ApplicationName}"
+                   : original.GroupKey
             };
 
             ViewBag.IsNewVersion = true;
             ViewBag.ParentCRId = original.CRId;
             ViewBag.ParentVersion = original.Version;
-            return View("~/Views/ChangeRequests/Create.cshtml", newCr);
+
+            return View("~/Views/Dashboard/NewVersion.cshtml", newCr);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateNewVersion(ChangeRequest model)
+        {
+            var user = await GetCurrentUserAsync();
+            if (!ModelState.IsValid) 
+            {
+                return View("NewVersion", model); 
+            }
+            var latestVersion = await _db.ChangeRequests
+                .Where(x => x.GroupKey == model.GroupKey)
+                .OrderByDescending(x => x.Version)
+                .FirstOrDefaultAsync();
+
+            int currentVersion = 1;
+
+            if (latestVersion != null && int.TryParse(latestVersion.Version, out int parsedVersion))
+            {
+                currentVersion = parsedVersion;
+            }
+
+            int nextVersion = currentVersion + 1;
+
+            model.Version = nextVersion.ToString();
+            model.Status = ChangeRequestStatus.Pending;
+            model.DateSubmitted = DateTime.Now;
+            model.DeveloperUserId = user.WindowsUsername;
+            model.DeveloperName = user.FullName;
+
+            var baseCrId = latestVersion?.CRId?.Split("-V")[0] ?? "CR";
+
+            model.CRId = $"{baseCrId}-V{nextVersion}";
+
+            _db.ChangeRequests.Add(model);
+
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "New version created successfully.";
+
+            return RedirectToAction("Index");
         }
     }
 }

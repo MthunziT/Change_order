@@ -146,6 +146,41 @@ namespace Change_order.Controllers
             var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
             var developerEmail = developer?.Email ?? "";
 
+            // ── PENDING APPROVAL (requires comment) ──────────────────────────
+            if (model.SetPendingApproval)
+            {
+                if (string.IsNullOrWhiteSpace(model.Comments))
+                {
+                    TempData["Error"] = "A comment is required when setting status to Pending Approval.";
+                    return RedirectToAction("Details", new { id = model.ChangeRequestId });
+                }
+
+                cr.Status = ChangeRequestStatus.PendingApproval;
+
+                // Store who set it pending and their comment
+                if (user.Role == UserRole.Manager1)
+                {
+                    cr.Manager1UserId = user.WindowsUsername;
+                    cr.Manager1Name = user.FullName;
+                    cr.Manager1Comments = model.Comments;
+                }
+                else if (user.Role == UserRole.Manager2)
+                {
+                    cr.Manager2UserId = user.WindowsUsername;
+                    cr.Manager2Name = user.FullName;
+                    cr.Manager2Comments = model.Comments;
+                }
+
+                await _db.SaveChangesAsync();
+
+                // Notify developer they need to act
+                _ = _emailService.SendPendingApprovalAsync(cr, developerEmail, model.Comments);
+
+                TempData["Success"] = $"Change Request {cr.CRId} is pending approval. Developer has been notified.";
+                return RedirectToAction("Details", new { id = model.ChangeRequestId });
+            }
+
+            // ── REJECT ────────────────────────────────────────────────────────
             if (!model.Approved)
             {
                 cr.Status = ChangeRequestStatus.Rejected;
@@ -153,28 +188,37 @@ namespace Change_order.Controllers
                 cr.RejectedByName = user.FullName;
                 cr.RejectedAt = Now();
                 cr.RejectionReason = model.RejectionReason;
+
                 await _db.SaveChangesAsync();
                 _ = _emailService.SendRejectedAsync(cr, developerEmail);
                 TempData["Success"] = $"Change Request {cr.CRId} has been rejected.";
             }
-            else if (user.Role == UserRole.Manager1 && cr.Status == ChangeRequestStatus.Pending)
+            // ── MANAGER 1 APPROVE ─────────────────────────────────────────────
+            else if (user.Role == UserRole.Manager1 &&
+                     (cr.Status == ChangeRequestStatus.Pending ||
+                      cr.Status == ChangeRequestStatus.PendingApproval))
             {
                 cr.Status = ChangeRequestStatus.Manager1Approved;
                 cr.Manager1UserId = user.WindowsUsername;
                 cr.Manager1Name = user.FullName;
                 cr.Manager1ApprovedAt = Now();
                 cr.Manager1Comments = model.Comments;
+
                 await _db.SaveChangesAsync();
                 _ = _emailService.SendManager1ApprovedAsync(cr);
                 TempData["Success"] = $"Change Request {cr.CRId} approved. Manager 2 has been notified.";
             }
-            else if (user.Role == UserRole.Manager2 && cr.Status == ChangeRequestStatus.Manager1Approved)
+            // ── MANAGER 2 APPROVE ─────────────────────────────────────────────
+            else if (user.Role == UserRole.Manager2 &&
+                     (cr.Status == ChangeRequestStatus.Manager1Approved ||
+                      cr.Status == ChangeRequestStatus.PendingApproval))
             {
                 cr.Status = ChangeRequestStatus.Manager2Approved;
                 cr.Manager2UserId = user.WindowsUsername;
                 cr.Manager2Name = user.FullName;
                 cr.Manager2ApprovedAt = Now();
                 cr.Manager2Comments = model.Comments;
+
                 await _db.SaveChangesAsync();
                 _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
                 TempData["Success"] = $"Change Request {cr.CRId} fully approved. Developer has been notified.";
@@ -186,7 +230,47 @@ namespace Change_order.Controllers
 
             return RedirectToAction("Details", new { id = model.ChangeRequestId });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Resubmit(int id, string DeveloperResponse)
+        {
+            var cr = await _db.ChangeRequests.FindAsync(id);
+            if (cr == null) return NotFound();
 
+            var user = await GetCurrentUserAsync();
+
+            if (cr.DeveloperUserId != user.WindowsUsername)
+                return Forbid();
+
+            if (cr.Status != ChangeRequestStatus.PendingApproval)
+            {
+                TempData["Error"] = "This CR is not in Pending Approval status.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            if (string.IsNullOrWhiteSpace(DeveloperResponse))
+            {
+                TempData["Error"] = "A response is required before resubmitting.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            // Reset to Pending so Manager 1 can re-review
+            cr.Status = ChangeRequestStatus.Pending;
+
+            // Append developer response to existing comments
+            cr.Manager1Comments = string.IsNullOrEmpty(cr.Manager1Comments)
+                ? $"Developer response: {DeveloperResponse}"
+                : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";
+
+            await _db.SaveChangesAsync();
+
+            // Notify Manager 1 that the developer has resubmitted
+            var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
+            _ = _emailService.SendResubmittedAsync(cr, developer?.Email ?? "", DeveloperResponse);
+
+            TempData["Success"] = $"Change Request {cr.CRId} resubmitted. Manager 1 has been notified.";
+            return RedirectToAction("Details", new { id });
+        }
         // ── MarkDeployed ──────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]

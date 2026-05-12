@@ -9,7 +9,7 @@ namespace Change_order.Models
 
         [Required]
         [StringLength(20)]
-        public string CRId { get; set; } = string.Empty;
+        public string CRId { get; set; } =  "";
 
         // ── Section 1: Identification (auto-filled / dropdowns — unchanged) ──
         [Required]
@@ -17,24 +17,20 @@ namespace Change_order.Models
         [Display(Name = "Change Request Name")]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(100)]
         [Display(Name = "Application / System")]
         public string ApplicationName { get; set; } = string.Empty;
 
-        [Required]
+        
         [Display(Name = "Priority")]
         public Priority Priority { get; set; }
 
-        [Required]
         [Display(Name = "Impact")]
         public ImpactLevel Impact { get; set; }
 
-        [Required]
         [Display(Name = "Category")]
         public ChangeCategory Category { get; set; }
 
-        //[StringLength(100)]
+        
         [Display(Name = "Environment")]
         public DeploymentEnvironment Environment { get; set; }
 
@@ -179,7 +175,8 @@ namespace Change_order.Models
         Manager1Approved,
         Manager2Approved,
         Rejected,
-        Deployed
+        Deployed, 
+        PendingApproval
     }
 
     public enum Priority

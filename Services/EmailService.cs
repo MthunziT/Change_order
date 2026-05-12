@@ -12,6 +12,8 @@ namespace Change_order.Services
         Task SendManager2ApprovedAsync(ChangeRequest cr, string developerEmail);
         Task SendRejectedAsync(ChangeRequest cr, string developerEmail);
         Task SendDeployedAsync(ChangeRequest cr, string developerEmail);
+        Task SendPendingApprovalAsync(ChangeRequest cr, string developerEmail, string managerComment);
+        Task SendResubmittedAsync(ChangeRequest cr, string developerEmail, string developerResponse);
     }
 
     public class EmailService : IEmailService
@@ -77,6 +79,7 @@ namespace Change_order.Services
                 },
                 message: "This change request has been approved by <b>Manager 1</b> and now requires your final approval as <b>Manager 2</b>.",
                 actionText: "Review & Approve",
+                //actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
                 actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
             );
 
@@ -161,6 +164,48 @@ namespace Change_order.Services
             await SendAsync(developerEmail, subject, body);
             await SendAsync(_settings.Manager1Email, subject, body);
             await SendAsync(_settings.Manager2Email, subject, body);
+        }
+        public async Task SendPendingApprovalAsync(ChangeRequest cr, string developerEmail, string managerComment)
+        {
+            var subject = $"[Change Request] Action Required — {cr.CRId} Pending Your Response";
+            var body = BuildEmail(
+                title: "Additional Information Required",
+                color: "#7c3aed",
+                icon: "⏳",
+                crId: cr.CRId,
+                lines: new[]
+                {
+            $"<b>Change Request:</b> {cr.Name}",
+            $"<b>Application:</b> {cr.ApplicationName}",
+            $"<b>Manager's Comment:</b> {managerComment}"
+                },
+                message: "A manager has reviewed your change request and requires additional information before it can be approved. Please log in, review the comment, and resubmit.",
+                actionText: "View & Resubmit",
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
+            );
+            await SendAsync(developerEmail, subject, body);
+        }
+
+        public async Task SendResubmittedAsync(ChangeRequest cr, string developerEmail, string developerResponse)
+        {
+            var subject = $"[Change Request] Resubmitted — {cr.CRId} Awaiting Your Re-Review";
+            var body = BuildEmail(
+                title: "Change Request Resubmitted by Developer",
+                color: "#003366",
+                icon: "↻",
+                crId: cr.CRId,
+                lines: new[]
+                {
+            $"<b>Change Request:</b> {cr.Name}",
+            $"<b>Application:</b> {cr.ApplicationName}",
+            $"<b>Submitted By:</b> {cr.DeveloperName}",
+            $"<b>Developer Response:</b> {developerResponse}"
+                },
+                message: "The developer has addressed your comments and resubmitted the change request for your approval.",
+                actionText: "Review & Approve",
+                actionUrl: $"{_settings.AppBaseUrl}/ChangeRequests/Details/{cr.Id}"
+            );
+            await SendAsync(_settings.Manager1Email, subject, body);
         }
 
         private async Task SendAsync(string to, string subject, string body)
