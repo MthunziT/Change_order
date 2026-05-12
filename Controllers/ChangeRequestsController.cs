@@ -4,7 +4,6 @@ using Change_order.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Change_order.Controllers
 {
@@ -25,7 +24,6 @@ namespace Change_order.Controllers
             _emailService = emailService;
         }
 
-        // Strips seconds and milliseconds before saving to database
         private static DateTime Now()
         {
             var dt = DateTime.Now;
@@ -41,9 +39,11 @@ namespace Change_order.Controllers
             return user;
         }
 
+        // ── GET Create ────────────────────────────────────────────────────
         public IActionResult Create() =>
-            View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7) });
+            View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7), Version = "1.0" });
 
+        // ── POST Create ───────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ChangeRequest model)
@@ -53,10 +53,45 @@ namespace Change_order.Controllers
             ModelState.Remove("CRId");
             ModelState.Remove("DeveloperUserId");
             ModelState.Remove("DeveloperName");
+            ModelState.Remove("GroupKey");
+            ModelState.Remove("Version");
 
             if (!ModelState.IsValid) return View(model);
 
-            model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName);
+            // ── Duplicate check: same Name + Application ──────────────────
+            // Only check when this is NOT already a pre-tagged new version
+            if (string.IsNullOrEmpty(model.GroupKey))
+            {
+                var existing = await _db.ChangeRequests
+                    .Where(r => r.Name == model.Name
+                             && r.ApplicationName == model.ApplicationName
+                             && r.DeveloperUserId == user.WindowsUsername)
+                    .OrderByDescending(r => r.Id)
+                    .FirstOrDefaultAsync();
+
+                if (existing != null)
+                {
+                    // Return to form with a warning — let the user decide
+                    TempData["DuplicateWarning"] =
+                        $"A CR with the same name and application already exists ({existing.CRId} v{existing.Version}). " +
+                        $"Use '+ New Version' on the dashboard if you want to revise it, or continue to create a separate CR.";
+                    ModelState.AddModelError(string.Empty,
+                        $"Duplicate detected: {existing.CRId} (v{existing.Version}) already exists for '{model.Name}' / '{model.ApplicationName}'. " +
+                        "Click Submit again to create a separate CR, or go back to the Dashboard to create a new version.");
+                    // We still return the view — user can choose to resubmit anyway
+                    return View(model);
+                }
+            }
+
+            // ── Assign version and group key ──────────────────────────────
+            if (string.IsNullOrEmpty(model.Version)) model.Version = "1.0";
+            if (string.IsNullOrEmpty(model.GroupKey))
+                model.GroupKey = $"{model.Name}|{model.ApplicationName}";
+
+            // Generate CRId (includes version suffix for non-1.0 versions)
+            //model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName);
+            model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName.ToString());
+
             model.DeveloperUserId = user.WindowsUsername;
             model.DeveloperName = user.FullName;
             model.DateSubmitted = Now();
@@ -67,10 +102,12 @@ namespace Change_order.Controllers
 
             _ = _emailService.SendSubmittedAsync(model, user.Email);
 
-            TempData["Success"] = $"Change Request {model.CRId} submitted. Manager 1 has been notified.";
+            var versionLabel = model.Version != "1.0" ? $" (v{model.Version})" : "";
+            TempData["Success"] = $"Change Request {model.CRId}{versionLabel} submitted. Manager 1 has been notified.";
             return RedirectToAction("Index", "Dashboard");
         }
 
+        // ── Details ───────────────────────────────────────────────────────
         public async Task<IActionResult> Details(int id)
         {
             var cr = await _db.ChangeRequests.FindAsync(id);
@@ -81,11 +118,23 @@ namespace Change_order.Controllers
             if (user.Role == UserRole.Developer && cr.DeveloperUserId != user.WindowsUsername)
                 return Forbid();
 
+            // Fetch all versions of this CR family for the version history sidebar
+            var allVersions = new List<ChangeRequest>();
+            if (!string.IsNullOrEmpty(cr.GroupKey))
+            {
+                allVersions = await _db.ChangeRequests
+                    .Where(r => r.GroupKey == cr.GroupKey)
+                    .OrderBy(r => r.Version)
+                    .ToListAsync();
+            }
+
             ViewBag.CrService = _crService;
             ViewBag.CurrentUser = user;
+            ViewBag.AllVersions = allVersions;
             return View(cr);
         }
 
+        // ── ProcessApproval ───────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessApproval(ApprovalViewModel model)
@@ -104,11 +153,8 @@ namespace Change_order.Controllers
                 cr.RejectedByName = user.FullName;
                 cr.RejectedAt = Now();
                 cr.RejectionReason = model.RejectionReason;
-
                 await _db.SaveChangesAsync();
-
                 _ = _emailService.SendRejectedAsync(cr, developerEmail);
-
                 TempData["Success"] = $"Change Request {cr.CRId} has been rejected.";
             }
             else if (user.Role == UserRole.Manager1 && cr.Status == ChangeRequestStatus.Pending)
@@ -118,11 +164,8 @@ namespace Change_order.Controllers
                 cr.Manager1Name = user.FullName;
                 cr.Manager1ApprovedAt = Now();
                 cr.Manager1Comments = model.Comments;
-
                 await _db.SaveChangesAsync();
-
                 _ = _emailService.SendManager1ApprovedAsync(cr);
-
                 TempData["Success"] = $"Change Request {cr.CRId} approved. Manager 2 has been notified.";
             }
             else if (user.Role == UserRole.Manager2 && cr.Status == ChangeRequestStatus.Manager1Approved)
@@ -132,11 +175,8 @@ namespace Change_order.Controllers
                 cr.Manager2Name = user.FullName;
                 cr.Manager2ApprovedAt = Now();
                 cr.Manager2Comments = model.Comments;
-
                 await _db.SaveChangesAsync();
-
                 _ = _emailService.SendManager2ApprovedAsync(cr, developerEmail);
-
                 TempData["Success"] = $"Change Request {cr.CRId} fully approved. Developer has been notified.";
             }
             else
@@ -147,6 +187,7 @@ namespace Change_order.Controllers
             return RedirectToAction("Details", new { id = model.ChangeRequestId });
         }
 
+        // ── MarkDeployed ──────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkDeployed(int id)
@@ -163,15 +204,14 @@ namespace Change_order.Controllers
             var user = await GetCurrentUserAsync();
             cr.Status = ChangeRequestStatus.Deployed;
             cr.DeployedAt = Now();
-
             await _db.SaveChangesAsync();
 
             _ = _emailService.SendDeployedAsync(cr, user.Email);
-
             TempData["Success"] = $"Change Request {cr.CRId} marked as deployed. All parties notified.";
             return RedirectToAction("Details", new { id });
         }
 
+        // ── DownloadPdf ───────────────────────────────────────────────────
         public async Task<IActionResult> DownloadPdf(int id)
         {
             var cr = await _db.ChangeRequests.FindAsync(id);
@@ -184,9 +224,10 @@ namespace Change_order.Controllers
             }
 
             var pdfBytes = await _crService.GeneratePdfAsync(cr);
-            return File(pdfBytes, "application/pdf", $"{cr.CRId}_ChangeRequest.pdf");
+            return File(pdfBytes, "application/pdf", $"{cr.CRId}_v{cr.Version}_ChangeRequest.pdf");
         }
 
+        // ── Jenkins API ───────────────────────────────────────────────────
         [AllowAnonymous]
         [HttpGet("/api/cr/check/{crId}")]
         public async Task<IActionResult> CheckDeployment(string crId)
@@ -199,6 +240,7 @@ namespace Change_order.Controllers
             return Ok(new
             {
                 crId = cr.CRId,
+                version = cr.Version,
                 status = cr.Status.ToString(),
                 allowed,
                 reason = allowed

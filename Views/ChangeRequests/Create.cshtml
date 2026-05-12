@@ -1,6 +1,7 @@
 ﻿@using Change_order.Models
 @using Change_order.Services
-@model ChangeRequest
+@model Change_order.Models.ChangeRequest
+@* @model ChangeRequest *@
 @{
     ViewData["Title"] = "New Change Request";
 }
@@ -31,7 +32,45 @@
                     <input asp-for="Name" class="form-input" placeholder="e.g. Send Email Notification for Awaiting Information Status" />
                     <span asp-validation-for="Name" class="field-error"></span>
                 </div>
+
                 <div class="form-group col-2">
+                    <label asp-for="ApplicationName" style="font-weight:700">
+                        Application / System *
+                    </label>
+
+                    <select id="appSelect"
+                            class="form-input"
+                            onchange="handleAppChange()"
+                            style="margin-bottom:8px">
+
+                        <option value="">Select application...</option>
+
+                        <option value="Liquid">Liquid</option>
+                        <option value="Zebra">Zebra</option>
+                        <option value="VNS-Valuation Notice System">VNS-Valuation Notice System</option>
+                        <option value="Akon">Akon</option>
+                        <option value="Task Management">Task Management</option>
+                        <option value="infoUpdater">infoUpdater</option>
+                        <option value="Objections">Objections</option>
+                        <option value="GV Tool App">GV Tool App</option>
+                        <option value="Notices">Notices</option>
+                        <option value="Verification">Verification</option>
+                        <option value="SearchPacks">SearchPacks</option>
+
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <input asp-for="ApplicationName"
+                           id="appNameInput"
+                           class="form-input"
+                           placeholder="Enter application name..."
+                           style="display:none"
+                           autocomplete="off" />
+
+                    <span asp-validation-for="ApplicationName"
+                          class="field-error"></span>
+                </div>
+               @*  <div class="form-group col-2">
                     <label asp-for="ApplicationName" style="font-weight:700">Application / System *</label>
                     <select id="appSelect" class="form-input" onchange="handleAppChange(this)" style="margin-bottom:8px">
                         <option value="">Select application...</option>
@@ -46,13 +85,35 @@
                         <option>Notices</option>
                         <option>Verification</option>
                         <option>SearchPacks</option>
-                        <option value="Other">Other (type below)</option>
+                        <option value="Other">Other </option>
                     </select>
                     <input asp-for="ApplicationName" id="appNameInput" class="form-input"
                            placeholder="Type application / project name..."
                            style="display:none" autocomplete="off" />
                     <span asp-validation-for="ApplicationName" class="field-error"></span>
-                </div>
+                </div> *@
+               @*  <div class="form-group col-2">
+                    <label asp-for="ApplicationName" style="font-weight:700">Application / System *</label>
+                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)" style="margin-bottom:8px" asp-items="Html.GetEnumSelectList <ApplicationName>()">
+                        <option value="">Select application...</option> *@
+                        @* <option>Liquid</option>
+                        <option>Zebra</option>
+                        <option>VNS-Valuation Notice System</option>
+                        <option>Akon</option>
+                        <option>Task Management</option>
+                        <option>infoUpdater</option>
+                        <option>Objections</option>
+                        <option>GV Tool App</option>
+                        <option>Notices</option>
+                        <option>Verification</option>
+                        <option>SearchPacks</option>
+                        <option value="Other">Other (type below)</option> *@
+                   @*  </select>
+                    <input asp-for="ApplicationName" id="appNameInput" class="form-input"
+                           placeholder="Type application / project name..."
+                           style="display:none" autocomplete="off" />
+                    <span asp-validation-for="ApplicationName" class="field-error"></span>
+                </div> *@
                 <div class="form-group col-1">
                     <label asp-for="Priority" style="font-weight:700">Priority *</label>
                     <select asp-for="Priority" class="form-input" asp-items="Html.GetEnumSelectList<Priority>()">
@@ -76,10 +137,10 @@
                 </div>
                 <div class="form-group col-1">
                     <label asp-for="Environment" style="font-weight:700">Environment</label>
-                    <select asp-for="Environment" class="form-input">
-                        <option>Production</option>
-                        <option>UAT</option>
+                    <select asp-for="Environment" class="form-input" asp-items="Html.GetEnumSelectList<DeploymentEnvironment>()">
+                        <option value="">Select...</option> 
                     </select>
+                    <span asp-validation-for="Environment" class="field-error"></span>
                 </div>
             </div>
         </div>
@@ -113,6 +174,15 @@
                 <h2 style="margin:0;font-size:1rem">Change Request Impact &amp; Proposed Response <span style="font-weight:400;font-size:0.85rem">(from submitting party's perspective)</span></h2>
             </div>
             <div class="form-grid" style="border:1px solid #a6a6a6;border-top:none;padding:16px">
+
+                <div class="form-group  col-2">
+                    <label asp-for="AreasImpacted" style=" font-weight:700">
+                        Areas Impacted
+                        <span style="font-weight:400;font-size:0.8rem">(if change is implemented as requested)</span>
+                    </label>
+                    <textarea asp-for="AreasImpacted" class="form-input" rows="3"
+                              placeholder="Who it impacts: Valuation Admin, Valuation Admin Supervisor, Clients. Area it impacts: Late Condonation system"></textarea>
+                </div>
 
                 <div class="form-group col-2">
                     <label asp-for="ImpactDescription" style="font-weight:700">
@@ -155,7 +225,7 @@
                 <div class="form-group col-1">
                     <label asp-for="ExpectedOutcome" style="font-weight:700">
                         Expected Outcome
-                        <span style="font-weight:400;font-size:0.8rem">(of implementing the requested change)</span>
+                        <span style="font-weight:400;font-size:0.8rem"></span>
                     </label>
                     <textarea asp-for="ExpectedOutcome" class="form-input" rows="3"
                               placeholder="e.g. Improved client communication, reduced follow-ups..."></textarea>
@@ -285,40 +355,66 @@
     </div>
 </form>
 
+
 @section Scripts {
+
     <script>
-        function handleAppChange(select) {
-            const input = document.getElementById('appNameInput');
-            if (select.value === 'Other') {
-                input.style.display = 'block';
-                input.value = '';
-                input.focus();
-                select.removeAttribute('name');
-                input.setAttribute('name', 'ApplicationName');
-            } else {
-                input.style.display = 'none';
-                input.removeAttribute('name');
-                select.setAttribute('name', 'ApplicationName');
-                input.value = select.value;
+
+        function handleAppChange() {
+
+            const dropdown = document.getElementById("appSelect");
+
+            const textbox = document.getElementById("appNameInput");
+
+            if (dropdown.value === "Other") {
+
+                textbox.style.display = "block";
+
+                textbox.value = "";
+
+                textbox.focus();
+
+            }
+            else {
+
+                textbox.style.display = "none";
+
+                textbox.value = dropdown.value;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const select = document.getElementById('appSelect');
-            const input = document.getElementById('appNameInput');
-            const currentValue = input.value;
-            if (!currentValue) return;
-            const options = Array.from(select.options).map(o => o.value);
-            if (options.includes(currentValue)) {
-                select.value = currentValue;
-                select.setAttribute('name', 'ApplicationName');
-                input.removeAttribute('name');
-            } else {
-                select.value = 'Other';
-                input.style.display = 'block';
-                input.setAttribute('name', 'ApplicationName');
-                select.removeAttribute('name');
-            }
-        });
     </script>
+
 }
+@* @section Scripts {
+
+    <script>
+
+        function handleAppChange() {
+
+            const dropdown = document.getElementById("appSelect");
+
+            const textbox = document.getElementById("otherAppInput");
+
+            const selectedText =
+                dropdown.options[dropdown.selectedIndex].text;
+
+            if (selectedText === "Other") {
+
+                textbox.style.display = "block";
+
+                textbox.focus();
+
+            }
+            else {
+
+                textbox.style.display = "none";
+
+                textbox.value = "";
+
+            }
+        }
+
+    </script>
+
+} *@

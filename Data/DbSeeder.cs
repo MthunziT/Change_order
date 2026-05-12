@@ -1,3 +1,6 @@
+using Change_order.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace Change_order.Data
 {
     public static class DbSeeder

@@ -155,11 +155,7 @@
                     <td style="@LH;font-style:italic">
                         Areas Impacted<br/><small style="font-size:0.75rem">(if change is implemented as requested)</small>
                     </td>
-                    <td style="@VH">
-                        <strong>Environment:</strong> @Model.Environment &nbsp;|&nbsp;
-                        <strong>Application:</strong> @Model.ApplicationName &nbsp;|&nbsp;
-                        <strong>Developer:</strong> @Model.DeveloperName
-                    </td>
+                    <td style="@VH">@(Model.AreasImpacted ?? "-")</td>
                 </tr>
                 <tr>
                     <td style="@LH;font-style:italic">

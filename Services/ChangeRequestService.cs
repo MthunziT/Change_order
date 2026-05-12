@@ -8,6 +8,7 @@ using iText.Layout;
 using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
+using iText.IO.Image;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 
@@ -27,27 +28,30 @@ namespace Change_order.Services
         private readonly ChangeOrderDbContext _db;
 
         public ChangeRequestService(ChangeOrderDbContext db) { _db = db; }
-
+        //public async Task<string> GenerateCRIdAsync(ApplicationType applicationName)
         public async Task<string> GenerateCRIdAsync(string applicationName)
         {
             var prefix = GetApplicationPrefix(applicationName);
+
             var last = await _db.ChangeRequests
                 .Where(r => r.CRId.StartsWith(prefix))
                 .OrderByDescending(r => r.Id)
                 .FirstOrDefaultAsync();
+
             int nextNum = 1;
             if (last != null)
             {
                 var numPart = last.CRId.Substring(prefix.Length);
-                if (int.TryParse(numPart, out int n)) nextNum = n + 1;
+                if (int.TryParse(numPart, out int n))
+                    nextNum = n + 1;
             }
             return $"{prefix}{nextNum:D3}";
         }
 
         private static string GetApplicationPrefix(string applicationName)
         {
-            var name = applicationName.Trim();
-            return name.ToLower() switch
+            var name = applicationName.Trim().ToLower();
+            return name switch
             {
                 "liquid" => "LI",
                 "zebra" => "ZB",
@@ -60,7 +64,7 @@ namespace Change_order.Services
                 "notices" => "NT",
                 "verification" => "VR",
                 "searchpacks" => "SP",
-                _ => GeneratePrefixFromName(name)
+                _ => GeneratePrefixFromName(applicationName)
             };
         }
 
@@ -130,14 +134,33 @@ namespace Change_order.Services
             {
                 var top = new Table(UnitValue.CreatePercentArray(new float[] { 18, 47, 35 }))
                     .UseAllAvailableWidth().SetMarginBottom(8);
+                var logoPath = System.IO.Path.Combine(
+                  Directory.GetCurrentDirectory(),
+                  "wwwroot",
+                  //"images",
+                 "joburg_logo.png");
+                var imageData = ImageDataFactory.Create(logoPath);
 
-                var logo = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
-                    .SetPadding(10).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-                logo.Add(new Paragraph("Jo").SetFont(boldFont).SetFontSize(22)
-                    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginBottom(0));
-                logo.Add(new Paragraph("burg").SetFont(boldFont).SetFontSize(22)
-                    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginTop(-6));
+                var logoImage = new Image(imageData)
+                    .ScaleToFit(70, 70)
+                    .SetHorizontalAlignment(HorizontalAlignment.CENTER);
+
+                var logo = new Cell()
+                    .SetBorder(new SolidBorder(borderCol, 0.75f))
+                    .SetPadding(5)
+                    .SetVerticalAlignment(VerticalAlignment.MIDDLE)
+                    .SetTextAlignment(TextAlignment.CENTER);
+
+                logo.Add(logoImage);
+
                 top.AddCell(logo);
+                //var logo = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
+                //    .SetPadding(10).SetVerticalAlignment(VerticalAlignment.MIDDLE);
+                //logo.Add(new Paragraph("Jo").SetFont(boldFont).SetFontSize(22)
+                //    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginBottom(0));
+                //logo.Add(new Paragraph("burg").SetFont(boldFont).SetFontSize(22)
+                //    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginTop(-6));
+                //top.AddCell(logo);
 
                 var title = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
                     .SetPadding(10).SetVerticalAlignment(VerticalAlignment.MIDDLE)
@@ -160,7 +183,7 @@ namespace Change_order.Services
                 //VRow("Version No:", "1.0");
                 VRow("Version Date:", cr.DateSubmitted.ToString("dd/MM/yyyy"));
                 //VRow("Project Number:", "");
-                VRow("Project Name:", cr.ApplicationName);
+                VRow("Project Name:", cr.ApplicationName.ToString());
                 vCell.Add(vt);
                 top.AddCell(vCell);
                 doc.Add(top);
@@ -265,8 +288,7 @@ namespace Change_order.Services
             SectionBar("Change Request Impact & Proposed Response (from submitting party's perspective)");
             var d3 = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
             Row(d3, "Areas Impacted\n(if change is implemented\nas requested)",
-                $"Who it impacts: {cr.DeveloperName}, IT Department\n" +
-                $"Area it impacts: {cr.ApplicationName} – {cr.Environment} environment", italic: true);
+                V(cr.AreasImpacted), italic: true);
             Row(d3, "Impact Description\n(if change is implemented\nas requested)",
                 V(cr.ImpactDescription), italic: true);
             Row(d3, "Impact of not Making\nthe Change",
@@ -476,13 +498,13 @@ namespace Change_order.Services
                     cr.Manager2Comments ?? "");
             doc.Add(authT);
 
-            var notesT = new Table(1).UseAllAvailableWidth();
-            notesT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5).SetMinHeight(60)
-                .Add(new Paragraph(
-                    "List details if \"Approved with Changes\" or state reason(s) if \"Rejected\"\n\n" +
-                    (isRejected ? V(cr.RejectionReason) : ""))
-                    .SetFont(bodyFont).SetFontSize(8.5f)));
-            doc.Add(notesT);
+            //var notesT = new Table(1).UseAllAvailableWidth();
+            //notesT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5).SetMinHeight(60)
+            //    .Add(new Paragraph(
+            //        "List details if \"Approved with Changes\" or state reason(s) if \"Rejected\"\n\n" +
+            //        (isRejected ? V(cr.RejectionReason) : ""))
+            //        .SetFont(bodyFont).SetFontSize(8.5f)));
+            //doc.Add(notesT);
 
             Footer(4);
 
@@ -514,7 +536,7 @@ namespace Change_order.Services
             log.AppendLine($"\u2022 {cr.DateSubmitted:dd/MM/yyyy}:");
             log.AppendLine($"  Action: Change request \"{cr.Name}\" submitted for review.");
             log.AppendLine($"  Involved: {cr.DeveloperName}.");
-            log.AppendLine("  Result: Requirements documented and submitted for approval.\n");
+            log.AppendLine("  Result: Change Order Request documented and submitted for approval.\n");
             if (cr.Manager1ApprovedAt.HasValue)
             {
                 log.AppendLine($"\u2022 {cr.Manager1ApprovedAt:dd/MM/yyyy}:");

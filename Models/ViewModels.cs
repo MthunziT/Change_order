@@ -15,10 +15,17 @@ namespace Change_order.Models
         [Display(Name = "Remember me")]
         public bool RememberMe { get; set; }
     }
-
+    public class CRGroup
+    {
+        public string GroupKey { get; set; } = string.Empty;
+        public ChangeRequest Latest { get; set; } = null!;
+        public List<ChangeRequest> AllVersions { get; set; } = new();
+        public bool HasMultipleVersions => AllVersions.Count > 1;
+    }
     public class DashboardViewModel
     {
         public List<ChangeRequest> AllRequests { get; set; } = new();
+        public List<CRGroup> GroupedRequests { get; set; } = new();
         public int TotalCount { get; set; }
         public int PendingCount { get; set; }
         public int ApprovedCount { get; set; }

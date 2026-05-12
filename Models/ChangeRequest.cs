@@ -34,9 +34,9 @@ namespace Change_order.Models
         [Display(Name = "Category")]
         public ChangeCategory Category { get; set; }
 
-        [StringLength(100)]
+        //[StringLength(100)]
         [Display(Name = "Environment")]
-        public string Environment { get; set; } = "Production";
+        public DeploymentEnvironment Environment { get; set; }
 
         // ── Section 2: Description ────────────────────────────────────────────
         [Required]
@@ -53,6 +53,10 @@ namespace Change_order.Models
         [StringLength(1000)]
         [Display(Name = "Impact Description")]
         public string? ImpactDescription { get; set; }
+        // Versioning
+        public string Version { get; set; } = "1.0";          // e.g. "1.0", "1.1", "1.2"
+        public int? ParentId { get; set; }                      // null = original, set = child version
+        public string GroupKey { get; set; } = string.Empty;   // Name + ApplicationName combined key
 
         [StringLength(1000)]
         [Display(Name = "Impact if Not Making the Change")]
@@ -166,7 +170,7 @@ namespace Change_order.Models
         public string? RejectionReason { get; set; }
 
         public DateTime? DeployedAt { get; set; }
-        //public string? AreasImpacted { get; set; }
+        public string? AreasImpacted { get; set; }
     }
 
     public enum ChangeRequestStatus
@@ -201,4 +205,27 @@ namespace Change_order.Models
         Medium,
         High
     }
+    
+    public enum DeploymentEnvironment
+    {
+        Production,
+        UAT
+    }
+    //public enum ApplicationType
+    //{
+    //    Liquid,
+    //    Zebra,
+    //    [Display(Name = "VNS Valuation Notice System")]
+    //    VNSValuationNoticeSystem,
+    //    Akon,
+    //    [Display(Name = "Task Management")]
+    //    TaskManagement,
+    //    infoUpdate,
+    //    [Display(Name = "GV Tool App")]
+    //    GVTool,
+    //    Notices,
+    //    Verification,
+    //    SearchPacks,
+    //    Other
+    //}
 }
