@@ -5,18 +5,29 @@
 @{
     ViewData["Title"] = "New Change Request";
 }
+@{
+    bool isResubmit = ViewBag.IsResubmit == true;
+    string? pendingComment = ViewBag.PendingComment as string;
+}
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">Project Change Request</h1>
+        <h1 class="page-title">
+            @(isResubmit ? "Edit & Resubmit Change Request" : "Project Change Request")
+        </h1>
         <p class="page-subtitle">City of Johannesburg Municipality Property Branch</p>
     </div>
-    <a href="/Dashboard" class="btn-secondary">← Back</a>
+    <a href="@(isResubmit ? $"/ChangeRequests/Details/{Model.Id}" : "/Dashboard")" class="btn-secondary">← Back</a>
 </div>
 
-<form asp-action="Create" method="post" class="cr-form">
+<form asp-action="@(isResubmit ? "SaveResubmit" : "Create")"
+      asp-controller="ChangeRequests"
+      method="post" class="cr-form">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+    @if (isResubmit)
+    {
+        <input type="hidden" name="Id" value="@Model.Id" />
+    }
 
     <div class="form-sections">
 
@@ -70,50 +81,7 @@
                     <span asp-validation-for="ApplicationName"
                           class="field-error"></span>
                 </div>
-               @*  <div class="form-group col-2">
-                    <label asp-for="ApplicationName" style="font-weight:700">Application / System *</label>
-                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)" style="margin-bottom:8px">
-                        <option value="">Select application...</option>
-                        <option>Liquid</option>
-                        <option>Zebra</option>
-                        <option>VNS-Valuation Notice System</option>
-                        <option>Akon</option>
-                        <option>Task Management</option>
-                        <option>infoUpdater</option>
-                        <option>Objections</option>
-                        <option>GV Tool App</option>
-                        <option>Notices</option>
-                        <option>Verification</option>
-                        <option>SearchPacks</option>
-                        <option value="Other">Other </option>
-                    </select>
-                    <input asp-for="ApplicationName" id="appNameInput" class="form-input"
-                           placeholder="Type application / project name..."
-                           style="display:none" autocomplete="off" />
-                    <span asp-validation-for="ApplicationName" class="field-error"></span>
-                </div> *@
-               @*  <div class="form-group col-2">
-                    <label asp-for="ApplicationName" style="font-weight:700">Application / System *</label>
-                    <select id="appSelect" class="form-input" onchange="handleAppChange(this)" style="margin-bottom:8px" asp-items="Html.GetEnumSelectList <ApplicationName>()">
-                        <option value="">Select application...</option> *@
-                        @* <option>Liquid</option>
-                        <option>Zebra</option>
-                        <option>VNS-Valuation Notice System</option>
-                        <option>Akon</option>
-                        <option>Task Management</option>
-                        <option>infoUpdater</option>
-                        <option>Objections</option>
-                        <option>GV Tool App</option>
-                        <option>Notices</option>
-                        <option>Verification</option>
-                        <option>SearchPacks</option>
-                        <option value="Other">Other (type below)</option> *@
-                   @*  </select>
-                    <input asp-for="ApplicationName" id="appNameInput" class="form-input"
-                           placeholder="Type application / project name..."
-                           style="display:none" autocomplete="off" />
-                    <span asp-validation-for="ApplicationName" class="field-error"></span>
-                </div> *@
+              
                 <div class="form-group col-1">
                     <label asp-for="Priority" style="font-weight:700">Priority *</label>
                     <select asp-for="Priority" class="form-input" asp-items="Html.GetEnumSelectList<Priority>()">
@@ -349,9 +317,39 @@
 
     </div>
 
-    <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end">
+    @* <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end">
         <a href="/Dashboard" class="btn-secondary">Cancel</a>
         <button type="submit" class="btn-primary">Submit Change Request</button>
+    </div> *@
+
+    @if (isResubmit)
+    {
+        <div class="form-section" style="border:2px solid #d9d9d9;margin-top:0">
+            <div class="section-header" style="background:#ede9fe;border:1px solid #d9d9d9;padding:8px 12px;margin-bottom:0">
+                <span class="section-num" style="background:#d9d9d9;color:#fff">↻</span>
+                <h2 style="margin:0;font-size:1rem;color:#d9d9d9">Your Response (required to resubmit)</h2>
+            </div>
+            <div style="padding:16px;border:1px solid #d9d9d9;border-top:none">
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.82rem;text-transform:uppercase;
+                                  letter-spacing:0.06em;color:#374151;display:block;margin-bottom:6px">
+                        Describe the changes you have made or information you have provided *
+                    </label>
+                    <textarea name="DeveloperResponse" class="form-input" rows="4" required
+                          placeholder="e.g. I have updated the impact description and added the rollback plan as requested by the manager..."
+                          style="border-color:#d9d9d9"></textarea>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end">
+        <a href="@(isResubmit ? $"/ChangeRequests/Details/{Model.Id}" : "/Dashboard")" class="btn-secondary">
+            Cancel
+        </a>
+        <button type="submit" class="btn-primary">
+            @(isResubmit ? "↻ Save Changes & Resubmit" : "Submit Change Request")
+        </button>
     </div>
 </form>
 

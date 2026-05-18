@@ -3,6 +3,7 @@ using Change_order.Models;
 using Change_order.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Change_order.Controllers
@@ -14,6 +15,7 @@ namespace Change_order.Controllers
         private readonly IChangeRequestService _crService;
         private readonly IUserService _userService;
         private readonly IEmailService _emailService;
+        //private string _connString;
 
         public ChangeRequestsController(ChangeOrderDbContext db, IChangeRequestService crService,
             IUserService userService, IEmailService emailService)
@@ -230,6 +232,44 @@ namespace Change_order.Controllers
 
             return RedirectToAction("Details", new { id = model.ChangeRequestId });
         }
+        //public async Task<string?> GetSignatureAsync(string windowsUsername)
+        //{
+        //    try
+        //    {
+        //        await using var conn = new SqlConnection(_connString);
+        //        await conn.OpenAsync();
+        //        await using var cmd = new SqlCommand(
+        //            "SELECT Signature FROM Users WHERE Username = @u", conn);
+        //        cmd.Parameters.AddWithValue("@u", windowsUsername);
+        //        var result = await cmd.ExecuteScalarAsync();
+        //        return result?.ToString();
+        //    }
+        //    catch { return null; }
+        //}
+
+        // ── GET: Edit before resubmit ─────────────────────────────────────────
+        public async Task<IActionResult> EditResubmit(int id)
+        {
+            var cr = await _db.ChangeRequests.FindAsync(id);
+            if (cr == null) return NotFound();
+
+            var user = await GetCurrentUserAsync();
+
+            if (cr.DeveloperUserId != user.WindowsUsername)
+                return Forbid();
+
+            if (cr.Status != ChangeRequestStatus.PendingApproval)
+            {
+                TempData["Error"] = "Only change requests in Pending Approval status can be edited.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            ViewBag.IsResubmit = true;
+            ViewBag.PendingComment = cr.Manager1Comments ?? cr.Manager2Comments;
+            return View("Create", cr);
+        }
+
+        // ── POST: Save edits and resubmit ─────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Resubmit(int id, string DeveloperResponse)
@@ -250,26 +290,99 @@ namespace Change_order.Controllers
 
             if (string.IsNullOrWhiteSpace(DeveloperResponse))
             {
-                TempData["Error"] = "A response is required before resubmitting.";
-                return RedirectToAction("Details", new { id });
+                TempData["Error"] = "A response comment is required before resubmitting.";
+                return RedirectToAction("EditResubmit", new { id });
             }
 
-            // Reset to Pending so Manager 1 can re-review
-            cr.Status = ChangeRequestStatus.Pending;
-
-            // Append developer response to existing comments
+            // Append developer response to existing manager comment
             cr.Manager1Comments = string.IsNullOrEmpty(cr.Manager1Comments)
                 ? $"Developer response: {DeveloperResponse}"
                 : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";
 
+            cr.Status = ChangeRequestStatus.Pending;
+
             await _db.SaveChangesAsync();
 
-            // Notify Manager 1 that the developer has resubmitted
             var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
             _ = _emailService.SendResubmittedAsync(cr, developer?.Email ?? "", DeveloperResponse);
 
             TempData["Success"] = $"Change Request {cr.CRId} resubmitted. Manager 1 has been notified.";
             return RedirectToAction("Details", new { id });
+        }
+
+        // ── POST: Save form edits (called from EditResubmit view) ─────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveResubmit(ChangeRequest model, string DeveloperResponse)
+        {
+            var cr = await _db.ChangeRequests.FindAsync(model.Id);
+            if (cr == null) return NotFound();
+
+            var user = await GetCurrentUserAsync();
+
+            if (cr.DeveloperUserId != user.WindowsUsername)
+                return Forbid();
+
+            if (cr.Status != ChangeRequestStatus.PendingApproval)
+            {
+                TempData["Error"] = "This CR is not in Pending Approval status.";
+                return RedirectToAction("Details", new { id = model.Id });
+            }
+
+            if (string.IsNullOrWhiteSpace(DeveloperResponse))
+            {
+                TempData["Error"] = "A response comment is required before resubmitting.";
+                ViewBag.IsResubmit = true;
+                ViewBag.PendingComment = cr.Manager1Comments ?? cr.Manager2Comments;
+                return View("Create", model);
+            }
+
+            // Update editable fields
+            cr.Name = model.Name;
+            cr.ApplicationName = model.ApplicationName;
+            cr.Description = model.Description;
+            cr.BusinessJustification = model.BusinessJustification;
+            cr.Priority = model.Priority;
+            cr.Category = model.Category;
+            cr.Impact = model.Impact;
+            cr.Environment = model.Environment;
+            cr.AreasImpacted = model.AreasImpacted;
+            cr.ImpactDescription = model.ImpactDescription;
+            cr.ImpactIfNotDone = model.ImpactIfNotDone;
+            cr.ImpactTimeline = model.ImpactTimeline;
+            cr.RecommendedStrategy = model.RecommendedStrategy;
+            cr.CostResourceTime = model.CostResourceTime;
+            cr.ExpectedOutcome = model.ExpectedOutcome;
+            cr.AssessmentAssignedTo = model.AssessmentAssignedTo;
+            cr.TasksAffected = model.TasksAffected;
+            cr.StakeholdersAffected = model.StakeholdersAffected;
+            cr.OptionsConsidered = model.OptionsConsidered;
+            cr.RecommendedActions = model.RecommendedActions;
+            cr.ImpactOnScope = model.ImpactOnScope;
+            cr.ImpactOnSchedule = model.ImpactOnSchedule;
+            cr.AdditionalResources = model.AdditionalResources;
+            cr.AdditionalCost = model.AdditionalCost;
+            cr.DeploymentDate = model.DeploymentDate;
+            cr.DeploymentEndDate = model.DeploymentEndDate;
+            cr.DeploymentWindow = model.DeploymentWindow;
+            cr.ImplementationLead = model.ImplementationLead;
+            cr.TestPlan = model.TestPlan;
+            cr.RollbackPlan = model.RollbackPlan;
+
+            // Append developer response
+            cr.Manager1Comments = string.IsNullOrEmpty(cr.Manager1Comments)
+                ? $"Developer response: {DeveloperResponse}"
+                : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";
+
+            cr.Status = ChangeRequestStatus.Pending;
+
+            await _db.SaveChangesAsync();
+
+            var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
+            _ = _emailService.SendResubmittedAsync(cr, developer?.Email ?? "", DeveloperResponse);
+
+            TempData["Success"] = $"Change Request {cr.CRId} updated and resubmitted. Manager 1 has been notified.";
+            return RedirectToAction("Details", new { id = cr.Id });
         }
         // ── MarkDeployed ──────────────────────────────────────────────────
         [HttpPost]

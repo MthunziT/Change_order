@@ -20,7 +20,8 @@ builder.Services.AddScoped<IChangeRequestService, ChangeRequestService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddScoped<IChangeRequestService, ChangeRequestService>();
+builder.Services.AddScoped<IUserService, UserService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

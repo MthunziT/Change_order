@@ -1,5 +1,6 @@
 ﻿using Change_order.Data;
 using Change_order.Models;
+using iText.IO.Image;
 using iText.Kernel.Colors;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
@@ -8,7 +9,6 @@ using iText.Layout;
 using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
-using iText.IO.Image;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 
@@ -26,41 +26,41 @@ namespace Change_order.Services
     public class ChangeRequestService : IChangeRequestService
     {
         private readonly ChangeOrderDbContext _db;
+        private readonly IUserService _userService;  // ← ADDED
 
-        public ChangeRequestService(ChangeOrderDbContext db) { _db = db; }
-        //public async Task<string> GenerateCRIdAsync(ApplicationType applicationName)
+        public ChangeRequestService(ChangeOrderDbContext db, IUserService userService)  // ← ADDED
+        {
+            _db = db;
+            _userService = userService;
+        }
+
         public async Task<string> GenerateCRIdAsync(string applicationName)
         {
             var prefix = GetApplicationPrefix(applicationName);
-
             var last = await _db.ChangeRequests
                 .Where(r => r.CRId.StartsWith(prefix))
                 .OrderByDescending(r => r.Id)
                 .FirstOrDefaultAsync();
-
             int nextNum = 1;
             if (last != null)
             {
                 var numPart = last.CRId.Substring(prefix.Length);
-                if (int.TryParse(numPart, out int n))
-                    nextNum = n + 1;
+                if (int.TryParse(numPart, out int n)) nextNum = n + 1;
             }
             return $"{prefix}{nextNum:D3}";
         }
 
         private static string GetApplicationPrefix(string applicationName)
         {
-            var name = applicationName.Trim().ToLower();
-            return name switch
+            return applicationName.Trim().ToLower() switch
             {
                 "liquid" => "LI",
                 "zebra" => "ZB",
-                "vns-valuation notice system" => "VNS",
+                "vnsvaluationnoticesystem" => "VNS",
                 "akon" => "AK",
-                "task management" => "TM",
-                "infoupdater" => "IU",
-                "objections" => "OB",
-                "gv tool app" => "GV",
+                "taskmanagement" => "TM",
+                "infoupdate" => "IU",
+                "gvtool" => "GV",
                 "notices" => "NT",
                 "verification" => "VR",
                 "searchpacks" => "SP",
@@ -88,7 +88,6 @@ namespace Change_order.Services
             ChangeRequestStatus.Manager2Approved => "badge-approved",
             ChangeRequestStatus.Rejected => "badge-rejected",
             ChangeRequestStatus.Deployed => "badge-deployed",
-            ChangeRequestStatus.PendingApproval => "badge-pendingapproval",
             _ => "badge-pending"
         };
 
@@ -101,24 +100,18 @@ namespace Change_order.Services
             _ => "priority-low"
         };
 
-        // ═══════════════════════════════════════════════════════════════════
-        // PDF GENERATION — mirrors every section in the Create / Details views
-        // ═══════════════════════════════════════════════════════════════════
         public async Task<byte[]> GeneratePdfAsync(ChangeRequest cr)
         {
-            await Task.CompletedTask;
             using var ms = new MemoryStream();
             using var writer = new PdfWriter(ms);
             using var pdf = new PdfDocument(writer);
             using var doc = new Document(pdf, PageSize.A4);
             doc.SetMargins(40, 36, 48, 36);
 
-            // ── Fonts ─────────────────────────────────────────────────────
             var boldFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA_BOLD);
             var bodyFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA);
             var italicFont = PdfFontFactory.CreateFont(iText.IO.Font.Constants.StandardFonts.HELVETICA_OBLIQUE);
 
-            // ── Colours ───────────────────────────────────────────────────
             var black = new DeviceRgb(0, 0, 0);
             var sectionBg = new DeviceRgb(217, 217, 217);
             var labelBg = new DeviceRgb(242, 242, 242);
@@ -127,41 +120,37 @@ namespace Change_order.Services
 
             const int TOTAL_PAGES = 5;
 
-            // ── helper: val or dash ───────────────────────────────────────
             string V(string? s) => string.IsNullOrWhiteSpace(s) ? "-" : s;
 
-            // ── helper: page header ───────────────────────────────────────
+            // ── helper: convert base64 signature → iText Image ────────────
+            Image? SigImage(string? base64)
+            {
+                if (string.IsNullOrWhiteSpace(base64)) return null;
+                try
+                {
+                    var comma = base64.IndexOf(',');
+                    var data = comma >= 0 ? base64[(comma + 1)..] : base64;
+                    var bytes = Convert.FromBase64String(data);
+                    return new Image(ImageDataFactory.Create(bytes))
+                        .ScaleToFit(90, 38);
+                }
+                catch { return null; }
+            }
+
             void AddPageHeader()
             {
                 var top = new Table(UnitValue.CreatePercentArray(new float[] { 18, 47, 35 }))
                     .UseAllAvailableWidth().SetMarginBottom(8);
-                var logoPath = System.IO.Path.Combine(
-                  Directory.GetCurrentDirectory(),
-                  "wwwroot",
-                  //"images",
-                 "joburg_logo.png");
+
+                var logoPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "joburg_logo.png");
                 var imageData = ImageDataFactory.Create(logoPath);
-
-                var logoImage = new Image(imageData)
-                    .ScaleToFit(70, 70)
+                var logoImage = new Image(imageData).ScaleToFit(70, 70)
                     .SetHorizontalAlignment(HorizontalAlignment.CENTER);
-
-                var logo = new Cell()
-                    .SetBorder(new SolidBorder(borderCol, 0.75f))
-                    .SetPadding(5)
-                    .SetVerticalAlignment(VerticalAlignment.MIDDLE)
+                var logo = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
+                    .SetPadding(5).SetVerticalAlignment(VerticalAlignment.MIDDLE)
                     .SetTextAlignment(TextAlignment.CENTER);
-
                 logo.Add(logoImage);
-
                 top.AddCell(logo);
-                //var logo = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
-                //    .SetPadding(10).SetVerticalAlignment(VerticalAlignment.MIDDLE);
-                //logo.Add(new Paragraph("Jo").SetFont(boldFont).SetFontSize(22)
-                //    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginBottom(0));
-                //logo.Add(new Paragraph("burg").SetFont(boldFont).SetFontSize(22)
-                //    .SetFontColor(new DeviceRgb(0, 51, 102)).SetMarginTop(-6));
-                //top.AddCell(logo);
 
                 var title = new Cell().SetBorder(new SolidBorder(borderCol, 0.75f))
                     .SetPadding(10).SetVerticalAlignment(VerticalAlignment.MIDDLE)
@@ -181,16 +170,13 @@ namespace Change_order.Services
                         .SetPadding(3)
                         .Add(new Paragraph(v).SetFont(bodyFont).SetFontSize(7.5f).SetFontColor(black)));
                 }
-                //VRow("Version No:", "1.0");
                 VRow("Version Date:", cr.DateSubmitted.ToString("dd/MM/yyyy"));
-                //VRow("Project Number:", "");
                 VRow("Project Name:", cr.ApplicationName.ToString());
                 vCell.Add(vt);
                 top.AddCell(vCell);
                 doc.Add(top);
             }
 
-            // ── helper: gray section bar ──────────────────────────────────
             void SectionBar(string title)
             {
                 var t = new Table(1).UseAllAvailableWidth().SetMarginTop(10).SetMarginBottom(0);
@@ -201,7 +187,6 @@ namespace Change_order.Services
                 doc.Add(t);
             }
 
-            // ── helper: centered bar ──────────────────────────────────────
             void CenteredBar(string title)
             {
                 var t = new Table(1).UseAllAvailableWidth().SetMarginTop(0).SetMarginBottom(0);
@@ -212,7 +197,6 @@ namespace Change_order.Services
                 doc.Add(t);
             }
 
-            // ── helper: two-column row ────────────────────────────────────
             void Row(Table t, string label, string value, bool italic = false)
             {
                 var lc = new Cell().SetBackgroundColor(labelBg)
@@ -228,7 +212,6 @@ namespace Change_order.Services
                 t.AddCell(vc);
             }
 
-            // ── helper: page footer ───────────────────────────────────────
             void Footer(int p)
             {
                 doc.Add(new Paragraph(
@@ -238,17 +221,12 @@ namespace Change_order.Services
                     .SetBorderTop(new SolidBorder(borderCol, 0.5f)));
             }
 
-            // ═════════════════════════════════════════════════
-            // PAGE 1 — Identification + Description + Impact(partial)
-            // ═════════════════════════════════════════════════
+            // ═══════════════ PAGE 1 ═══════════════
             AddPageHeader();
-
-            // Section 1 — Identification
             SectionBar("Change Request Identification");
-            var idT = new Table(UnitValue.CreatePercentArray(new float[] { 22, 40, 20, 18 }))
-                .UseAllAvailableWidth();
+            var idT = new Table(UnitValue.CreatePercentArray(new float[] { 22, 40, 20, 18 })).UseAllAvailableWidth();
 
-            void IdCell(string label, string value, bool isLabel, bool bold = false, float fs = 8.5f)
+            void IdCell(string value, bool isLabel, bool bold = false, float fs = 8.5f)
             {
                 var c = new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                     .SetVerticalAlignment(VerticalAlignment.MIDDLE);
@@ -259,24 +237,14 @@ namespace Change_order.Services
                 idT.AddCell(c);
             }
 
-            IdCell("", "Change Request\nName", true);
-            IdCell("", cr.Name, false, bold: true, fs: 9f);
-            IdCell("", "Change\nRequest\nID #", true);
-            IdCell("", cr.CRId, false, bold: true, fs: 14f);
-
-            IdCell("", "Date Change\nRequest Submitted", true);
-            IdCell("", cr.DateSubmitted.ToString("dd/MM/yyyy"), false);
-            IdCell("", $"Priority ({cr.Priority})", true);
-            IdCell("", cr.Priority.ToString()[0].ToString(), false, bold: true);
-
-            IdCell("", "Date Last Updated", true);
-            IdCell("", DateTime.Now.ToString("dd/MM/yyyy"), false);
-            IdCell("", $"Impact ({cr.Impact})", true);
-            IdCell("", cr.Impact.ToString()[0].ToString(), false, bold: true);
-
+            IdCell("Change Request\nName", true); IdCell(cr.Name, false, bold: true, fs: 9f);
+            IdCell("Change\nRequest\nID #", true); IdCell(cr.CRId, false, bold: true, fs: 14f);
+            IdCell("Date Change\nRequest Submitted", true); IdCell(cr.DateSubmitted.ToString("dd/MM/yyyy"), false);
+            IdCell($"Priority ({cr.Priority})", true); IdCell(cr.Priority.ToString()[0].ToString(), false, bold: true);
+            IdCell("Date Last Updated", true); IdCell(DateTime.Now.ToString("dd/MM/yyyy"), false);
+            IdCell($"Impact ({cr.Impact})", true); IdCell(cr.Impact.ToString()[0].ToString(), false, bold: true);
             doc.Add(idT);
 
-            // Section 2 — Description
             SectionBar("Change Request Description (completed by the submitting party)");
             var d2 = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
             Row(d2, "Change Request\nSubmitted By", cr.DeveloperName);
@@ -285,246 +253,226 @@ namespace Change_order.Services
             Row(d2, "Change Request\nCategory", cr.Category.ToString());
             doc.Add(d2);
 
-            // Section 3 — Impact (partial — continues page 2)
             SectionBar("Change Request Impact & Proposed Response (from submitting party's perspective)");
             var d3 = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
-            Row(d3, "Areas Impacted\n(if change is implemented\nas requested)",
-                V(cr.AreasImpacted), italic: true);
-            Row(d3, "Impact Description\n(if change is implemented\nas requested)",
-                V(cr.ImpactDescription), italic: true);
-            Row(d3, "Impact of not Making\nthe Change",
-                V(cr.ImpactIfNotDone), italic: true);
+            Row(d3, "Areas Impacted\n(if change is implemented\nas requested)", V(cr.AreasImpacted), italic: true);
+            Row(d3, "Impact Description\n(if change is implemented\nas requested)", V(cr.ImpactDescription), italic: true);
+            Row(d3, "Impact of not Making\nthe Change", V(cr.ImpactIfNotDone), italic: true);
             doc.Add(d3);
-
             Footer(1);
 
-            // ═════════════════════════════════════════════════
-            // PAGE 2 — Impact continued + Assessment
-            // ═════════════════════════════════════════════════
+            // ═══════════════ PAGE 2 ═══════════════
             doc.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
             AddPageHeader();
-
             SectionBar("Change Request Impact & Proposed Response (from submitting party's perspective)");
             var d3b = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
-            Row(d3b, "Timeline of Impact\nOccurrence",
-                V(cr.ImpactTimeline), italic: true);
-            Row(d3b, "Recommended\nStrategy\n(to implement the\nrequested change)",
-                V(cr.RecommendedStrategy), italic: true);
-            Row(d3b, "Cost/Resource/Time\nRequirements\n(to implement the\nrequested change)",
-                V(cr.CostResourceTime), italic: true);
-            Row(d3b, "Expected Outcome\n(of implementing the\nrequested change)",
-                V(cr.ExpectedOutcome), italic: true);
+            Row(d3b, "Timeline of Impact\nOccurrence", V(cr.ImpactTimeline), italic: true);
+            Row(d3b, "Recommended\nStrategy\n(to implement the\nrequested change)", V(cr.RecommendedStrategy), italic: true);
+            Row(d3b, "Cost/Resource/Time\nRequirements\n(to implement the\nrequested change)", V(cr.CostResourceTime), italic: true);
+            Row(d3b, "Expected Outcome\n(of implementing the\nrequested change)", V(cr.ExpectedOutcome), italic: true);
             doc.Add(d3b);
 
-            // Section 4 — Detailed Assessment
             SectionBar("Detailed Change Request Assessment (completed by Project Manager or appointed representative)");
-            doc.Add(new Paragraph(
-                "Provide a detailed assessment of the requested change below.")
-                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText)
-                .SetMarginTop(4).SetMarginBottom(4));
-
+            doc.Add(new Paragraph("Provide a detailed assessment of the requested change below.")
+                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText).SetMarginTop(4).SetMarginBottom(4));
             var d4 = new Table(UnitValue.CreatePercentArray(new float[] { 35, 65 })).UseAllAvailableWidth();
             Row(d4, "Change Request\nAssessment Assigned To", cr.DeveloperName);
             doc.Add(d4);
 
-            // Tasks Affected
             SectionBar("Tasks Affected");
-            doc.Add(new Paragraph(
-                "List the project tasks that will be affected by the change, the resulting benefit, " +
-                "as well as the resource requirements for implementing the change.")
-                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText)
-                .SetMarginTop(3).SetMarginBottom(3));
+            doc.Add(new Paragraph("List the project tasks that will be affected by the change.")
+                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText).SetMarginTop(3).SetMarginBottom(3));
             var dTasks = new Table(UnitValue.CreatePercentArray(new float[] { 25, 25, 25, 25 })).UseAllAvailableWidth();
-            foreach (var h in new[] { "Affected Project Tasks"/*, "Benefits/Impacts", "Resource Requirements", "Schedule Impact" */})
-            {
-                dTasks.AddCell(new Cell().SetBackgroundColor(labelBg)
-                    .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                    .Add(new Paragraph(h).SetFont(boldFont).SetFontSize(8.5f)));
-            }
-            // Span all 4 columns with user's TasksAffected text
+            dTasks.AddCell(new Cell().SetBackgroundColor(labelBg)
+                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
+                .Add(new Paragraph("Affected Project Tasks").SetFont(boldFont).SetFontSize(8.5f)));
             dTasks.AddCell(new Cell(1, 4).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .Add(new Paragraph(V(cr.TasksAffected)).SetFont(bodyFont).SetFontSize(8.5f)));
             doc.Add(dTasks);
 
-            // Stakeholders Affected
             SectionBar("Stakeholders Affected");
-            doc.Add(new Paragraph(
-                "List the stakeholder(s) that will be affected by the proposed change.")
-                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText)
-                .SetMarginTop(3).SetMarginBottom(3));
+            doc.Add(new Paragraph("List the stakeholder(s) that will be affected by the proposed change.")
+                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText).SetMarginTop(3).SetMarginBottom(3));
             var dStake = new Table(UnitValue.CreatePercentArray(new float[] { 25, 25, 25, 25 })).UseAllAvailableWidth();
-            foreach (var h in new[] { "Affected Stakeholder(s)"/*, "Benefits/Impacts", "Action Required", "Schedule Impact"*/ })
-            {
-                dStake.AddCell(new Cell().SetBackgroundColor(labelBg)
-                    .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                    .Add(new Paragraph(h).SetFont(boldFont).SetFontSize(8.5f)));
-            }
+            dStake.AddCell(new Cell().SetBackgroundColor(labelBg)
+                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
+                .Add(new Paragraph("Affected Stakeholder(s)").SetFont(boldFont).SetFontSize(8.5f)));
             dStake.AddCell(new Cell(1, 4).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .Add(new Paragraph(V(cr.StakeholdersAffected)).SetFont(bodyFont).SetFontSize(8.5f)));
             doc.Add(dStake);
-
             Footer(2);
 
-            // ═════════════════════════════════════════════════
-            // PAGE 3 — Options + Recommended Actions
-            // ═════════════════════════════════════════════════
+            // ═══════════════ PAGE 3 ═══════════════
             doc.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
             AddPageHeader();
-
             SectionBar("Options Considered");
-            doc.Add(new Paragraph(
-                "Describe the options that have been considered. Explain pros and cons of various implementation strategies.")
-                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText)
-                .SetMarginTop(3).SetMarginBottom(6));
-            doc.Add(new Paragraph(V(cr.OptionsConsidered))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginBottom(10));
+            doc.Add(new Paragraph("Describe the options that have been considered. Explain pros and cons of various implementation strategies.")
+                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText).SetMarginTop(3).SetMarginBottom(6));
+            doc.Add(new Paragraph(V(cr.OptionsConsidered)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginBottom(10));
 
             SectionBar("Recommended Action(s)");
             doc.Add(new Paragraph("The following are details of the recommended strategy for implementing the requested change.")
-                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText)
-                .SetMarginTop(3).SetMarginBottom(4));
-
+                .SetFont(italicFont).SetFontSize(8f).SetFontColor(darkText).SetMarginTop(3).SetMarginBottom(4));
             CenteredBar("Action Plan & Associated Timelines");
-            doc.Add(new Paragraph(V(cr.RecommendedActions))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
-
+            doc.Add(new Paragraph(V(cr.RecommendedActions)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
             CenteredBar("Impact on Scope/Quality/Performance");
-            doc.Add(new Paragraph(V(cr.ImpactOnScope))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
-
+            doc.Add(new Paragraph(V(cr.ImpactOnScope)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
             CenteredBar("Impact on Schedule");
-            doc.Add(new Paragraph(V(cr.ImpactOnSchedule))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
-
+            doc.Add(new Paragraph(V(cr.ImpactOnSchedule)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
             CenteredBar("Additional Resources Required");
-            doc.Add(new Paragraph(V(cr.AdditionalResources))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
-
+            doc.Add(new Paragraph(V(cr.AdditionalResources)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(6));
             Footer(3);
 
-            // ═════════════════════════════════════════════════
-            // PAGE 4 — Additional Cost + Dates + Approvals
-            // ═════════════════════════════════════════════════
+            // ═══════════════ PAGE 4 ═══════════════
             doc.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
             AddPageHeader();
-
             SectionBar("Recommended Action(s)");
             CenteredBar("Additional Cost:");
-            doc.Add(new Paragraph(V(cr.AdditionalCost))
-                .SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(10));
+            doc.Add(new Paragraph(V(cr.AdditionalCost)).SetFont(bodyFont).SetFontSize(8.5f).SetMarginTop(4).SetMarginBottom(10));
 
-            // Dates + responsible person table
             var dDates = new Table(UnitValue.CreatePercentArray(new float[] { 28, 22, 28, 22 })).UseAllAvailableWidth();
-            dDates.AddCell(new Cell().SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
+            dDates.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .Add(new Paragraph("Recommended Change\nImplementation Start Date").SetFont(boldFont).SetFontSize(8.5f)));
             dDates.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .Add(new Paragraph(cr.DeploymentDate.ToString("dd/MM/yyyy")).SetFont(bodyFont).SetFontSize(8.5f)));
-            dDates.AddCell(new Cell(2, 1).SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
+            dDates.AddCell(new Cell(2, 1).SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .SetVerticalAlignment(VerticalAlignment.MIDDLE)
-                .Add(new Paragraph("Person(s) Responsible for\nLeading the\nImplementation of this\nProject Change")
-                    .SetFont(boldFont).SetFontSize(8.5f)));
-            dDates.AddCell(new Cell(2, 1)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
+                .Add(new Paragraph("Person(s) Responsible for\nLeading the\nImplementation of this\nProject Change").SetFont(boldFont).SetFontSize(8.5f)));
+            dDates.AddCell(new Cell(2, 1).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .SetVerticalAlignment(VerticalAlignment.MIDDLE)
-                .Add(new Paragraph(cr.DeveloperName)
-                .SetFont(boldFont)
-                .SetFontSize(8.5f)));
-            dDates.AddCell(new Cell().SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
+                .Add(new Paragraph(cr.DeveloperName).SetFont(boldFont).SetFontSize(8.5f)));
+            dDates.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
                 .Add(new Paragraph("Recommended Change\nImplementation\nCompletion Date").SetFont(boldFont).SetFontSize(8.5f)));
             dDates.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(6)
-                .Add(new Paragraph(cr.DeploymentDate.ToString("dd/MM/yyyy"))
-                .SetFont(bodyFont)
-                .SetFontSize(8.5f)));
+                .Add(new Paragraph(cr.DeploymentDate.ToString("dd/MM/yyyy")).SetFont(bodyFont).SetFontSize(8.5f)));
             doc.Add(dDates);
 
             doc.Add(new Paragraph(" ").SetFontSize(6));
 
-            // Approvals
+            // ── APPROVALS ────────────────────────────────────────────────────
             SectionBar("Approvals");
 
-            bool isFullyApproved = cr.Status == ChangeRequestStatus.Manager2Approved || cr.Status == ChangeRequestStatus.Deployed;
+            bool isFullyApproved = cr.Status == ChangeRequestStatus.Manager2Approved
+                      || cr.Status == ChangeRequestStatus.Deployed;
             bool isRejected = cr.Status == ChangeRequestStatus.Rejected;
-            bool isPartial = cr.Status == ChangeRequestStatus.Manager1Approved;
+            bool isWithChanges = cr.Status == ChangeRequestStatus.PendingApproval;
 
+            // Status label row
             var statusLT = new Table(1).UseAllAvailableWidth().SetMarginBottom(0);
             statusLT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
                 .SetBackgroundColor(labelBg).SetPadding(4)
                 .Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
             doc.Add(statusLT);
 
-            //var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 })).UseAllAvailableWidth();
-            ////void Chk(bool ticked, string label)
-            //{
-            //    chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
-            //        .SetTextAlignment(TextAlignment.CENTER)
-            //        .Add(new Paragraph(ticked ? "\u2611" : "\u2610").SetFont(boldFont).SetFontSize(11f)));
-            //    chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
-            //        .Add(new Paragraph(label).SetFont(bodyFont).SetFontSize(8.5f)));
-            //}
-            //Chk(isFullyApproved, "Approved as Requested");
-            //Chk(isPartial, "Approved with Changes");
-            //Chk(isRejected, "Rejected");
-            //doc.Add(chkT);
+            // Checkboxes row
+            var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 }))
+                .UseAllAvailableWidth();
+            void Chk(bool ticked, string label)
+            {
+                chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
+                    .SetTextAlignment(TextAlignment.CENTER)
+                    .Add(new Paragraph(ticked ? "\u2611" : "\u2610")
+                        .SetFont(boldFont).SetFontSize(11f)));
+                chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
+                    .Add(new Paragraph(label).SetFont(bodyFont).SetFontSize(8.5f)));
+            }
+            Chk(isFullyApproved, "Approved as Requested");   
+            Chk(isWithChanges, "Approved with Changes");   
+            Chk(isRejected, "Rejected");                
 
+            // ── Fetch signatures from UserManagement DB ───────────────────
+            var m1Sig = cr.Manager1UserId != null
+                ? await _userService.GetSignatureAsync(cr.Manager1UserId) : null;
+            var m2Sig = cr.Manager2UserId != null
+                ? await _userService.GetSignatureAsync(cr.Manager2UserId) : null;
+
+            // Authorisations header
             var authHT = new Table(1).UseAllAvailableWidth().SetMarginBottom(0);
             authHT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
                 .SetBackgroundColor(labelBg).SetPadding(4)
                 .Add(new Paragraph("Authorisation(s)").SetFont(boldFont).SetFontSize(8.5f)));
             doc.Add(authHT);
 
-            var authT = new Table(UnitValue.CreatePercentArray(new float[] { 30, 20, 20, 30 })).UseAllAvailableWidth();
-            foreach (var h in new[] { "Name(s)", "Role", "Date(s)", "Comments" })
+            // ── Authorisations table: Name | Role | Date | Comments | Signature
+            var authT = new Table(UnitValue.CreatePercentArray(new float[] { 22, 14, 16, 27, 21 }))
+                .UseAllAvailableWidth();
+            foreach (var h in new[] { "Name(s)", "Role", "Date(s)", "Comments", "Signature" })
             {
                 authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
                     .SetBackgroundColor(labelBg).SetPadding(4)
                     .Add(new Paragraph(h).SetFont(boldFont).SetFontSize(8.5f)));
             }
-            void AuthRow(string name, string role, string date, string comments)
+
+            void AuthRow(string name, string role, string date, string comments, Image? sig)
             {
-                foreach (var (val, fnt) in new[] {
-                    (name, bodyFont), (role, italicFont), (date, bodyFont), (comments, bodyFont) })
-                {
-                    authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5).SetMinHeight(25)
-                        .Add(new Paragraph(val).SetFont(fnt).SetFontSize(8.5f)));
-                }
+                authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(5).SetMinHeight(48)
+                    .Add(new Paragraph(name).SetFont(bodyFont).SetFontSize(8.5f)));
+
+                authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(5)
+                    .Add(new Paragraph(role).SetFont(italicFont).SetFontSize(8.5f)));
+
+                authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(5)
+                    .Add(new Paragraph(date).SetFont(bodyFont).SetFontSize(8.5f)));
+
+                authT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(5)
+                    .Add(new Paragraph(comments).SetFont(bodyFont).SetFontSize(8.5f)));
+
+                // Signature cell
+                var sigCell = new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(4)
+                    .SetVerticalAlignment(VerticalAlignment.MIDDLE)
+                    .SetTextAlignment(TextAlignment.CENTER);
+                if (sig != null)
+                    sigCell.Add(sig);
+                else
+                    sigCell.Add(new Paragraph("—").SetFont(bodyFont).SetFontSize(8.5f)
+                        .SetTextAlignment(TextAlignment.CENTER));
+                authT.AddCell(sigCell);
             }
-            AuthRow(cr.Manager1Name ?? "", "Manager 1",
-                    cr.Manager1ApprovedAt?.ToString("dd/MM/yyyy") ?? "",
-                    cr.Manager1Comments ?? "");
-            AuthRow(cr.Manager2Name ?? "", "Manager 2",
-                    cr.Manager2ApprovedAt?.ToString("dd/MM/yyyy") ?? "",
-                    cr.Manager2Comments ?? "");
+
+            AuthRow(
+                cr.Manager1Name ?? "",
+                "Manager 1",
+                cr.Manager1ApprovedAt?.ToString("dd/MM/yyyy") ?? "",
+                cr.Manager1Comments ?? "",
+                SigImage(m1Sig));
+
+            AuthRow(
+                cr.Manager2Name ?? "",
+                "Manager 2",
+                cr.Manager2ApprovedAt?.ToString("dd/MM/yyyy") ?? "",
+                cr.Manager2Comments ?? "",
+                SigImage(m2Sig));
+
             doc.Add(authT);
 
-            //var notesT = new Table(1).UseAllAvailableWidth();
-            //notesT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5).SetMinHeight(60)
-            //    .Add(new Paragraph(
-            //        "List details if \"Approved with Changes\" or state reason(s) if \"Rejected\"\n\n" +
-            //        (isRejected ? V(cr.RejectionReason) : ""))
-            //        .SetFont(bodyFont).SetFontSize(8.5f)));
-            //doc.Add(notesT);
+            // Rejection reason (if applicable)
+            if (isRejected)
+            {
+                var notesT = new Table(1).UseAllAvailableWidth();
+                notesT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                    .SetPadding(5).SetMinHeight(40)
+                    .Add(new Paragraph($"Rejection reason:\n{V(cr.RejectionReason)}")
+                        .SetFont(bodyFont).SetFontSize(8.5f)));
+                doc.Add(notesT);
+            }
 
             Footer(4);
 
-            // ═════════════════════════════════════════════════
-            // PAGE 5 — Implementation Tracking
-            // ═════════════════════════════════════════════════
+            // ═══════════════ PAGE 5 ═══════════════
             doc.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
             AddPageHeader();
-
             SectionBar("Change Request Implementation Tracking");
 
             var trackTop = new Table(UnitValue.CreatePercentArray(new float[] { 20, 45, 35 })).UseAllAvailableWidth();
-            trackTop.AddCell(new Cell().SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
+            trackTop.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
                 .Add(new Paragraph("Responsible").SetFont(boldFont).SetFontSize(8.5f)));
             trackTop.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                .Add(new Paragraph(cr.DeveloperName)
-                .SetFont(boldFont)
-                .SetFontSize(8.5f)));
+                .Add(new Paragraph(cr.DeveloperName).SetFont(boldFont).SetFontSize(8.5f)));
             trackTop.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
                 .Add(new Paragraph(
                     $"Target Completion Date for\nImplementing this Change\nRequest          " +
@@ -537,7 +485,7 @@ namespace Change_order.Services
             log.AppendLine($"\u2022 {cr.DateSubmitted:dd/MM/yyyy}:");
             log.AppendLine($"  Action: Change request \"{cr.Name}\" submitted for review.");
             log.AppendLine($"  Involved: {cr.DeveloperName}.");
-            log.AppendLine("  Result: Change Order Request documented and submitted for approval.\n");
+            log.AppendLine("  Result: Change Order Request documented submitted for approval.\n");
             if (cr.Manager1ApprovedAt.HasValue)
             {
                 log.AppendLine($"\u2022 {cr.Manager1ApprovedAt:dd/MM/yyyy}:");
@@ -570,9 +518,8 @@ namespace Change_order.Services
             }
 
             var trackBody = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
-            trackBody.AddCell(new Cell().SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                .SetVerticalAlignment(VerticalAlignment.TOP)
+            trackBody.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f))
+                .SetPadding(5).SetVerticalAlignment(VerticalAlignment.TOP)
                 .Add(new Paragraph("Change Request\nImplementation\nActions Taken &\nResults Achieved")
                     .SetFont(boldFont).SetFontSize(8.5f)));
             trackBody.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
@@ -580,9 +527,8 @@ namespace Change_order.Services
             doc.Add(trackBody);
 
             var statusFinal = new Table(UnitValue.CreatePercentArray(new float[] { 28, 72 })).UseAllAvailableWidth();
-            statusFinal.AddCell(new Cell().SetBackgroundColor(labelBg)
-                .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                .Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
+            statusFinal.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f))
+                .SetPadding(5).Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
             statusFinal.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
                 .Add(new Paragraph(cr.Status switch
                 {

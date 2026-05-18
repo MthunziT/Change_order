@@ -170,7 +170,7 @@ namespace Change_order.Services
             var subject = $"[Change Request] Action Required — {cr.CRId} Pending Your Response";
             var body = BuildEmail(
                 title: "Additional Information Required",
-                color: "#7c3aed",
+                color: "#e6b000",
                 icon: "⏳",
                 crId: cr.CRId,
                 lines: new[]
@@ -191,7 +191,7 @@ namespace Change_order.Services
             var subject = $"[Change Request] Resubmitted — {cr.CRId} Awaiting Your Re-Review";
             var body = BuildEmail(
                 title: "Change Request Resubmitted by Developer",
-                color: "#003366",
+                color: "#e6b000",
                 icon: "↻",
                 crId: cr.CRId,
                 lines: new[]

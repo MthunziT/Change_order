@@ -1,4 +1,4 @@
-using Change_order.Models;
+﻿using Change_order.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Change_order.Services
@@ -6,15 +6,14 @@ namespace Change_order.Services
     public interface IUserService
     {
         Task<ApplicationUser?> GetUserAsync(string windowsUsername);
+        Task<string?> GetSignatureAsync(string windowsUsername);  // ← NEW
     }
 
     public class UserService : IUserService
     {
-        // Connection string to UserManagement DB
         private readonly string _connString =
             "Server=168.89.27.118;Database=UserManagement;User ID=sa;Password=Code@007;TrustServerCertificate=true;";
 
-        // Change this to your actual SystemID for the Change Order system
         private const string SystemId = "10";
 
         public async Task<ApplicationUser?> GetUserAsync(string windowsUsername)
@@ -23,14 +22,12 @@ namespace Change_order.Services
             {
                 await using var conn = new SqlConnection(_connString);
                 await conn.OpenAsync();
-
                 await using var cmd = new SqlCommand("dbo.Login", conn);
                 cmd.CommandType = System.Data.CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@Username", windowsUsername);
                 cmd.Parameters.AddWithValue("@System", SystemId);
 
                 await using var reader = await cmd.ExecuteReaderAsync();
-
                 if (await reader.ReadAsync())
                 {
                     var roleName = reader["Role"]?.ToString() ?? "";
@@ -47,9 +44,32 @@ namespace Change_order.Services
                         Role = MapRole(roleName)
                     };
                 }
-
-                // User not found in UserManagement � no access
                 return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // ── NEW: fetch signature from UserManagement.dbo.Users ────────────
+        public async Task<string?> GetSignatureAsync(string windowsUsername)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connString);
+                await conn.OpenAsync();
+
+                // Username column in Users table stores the Windows login
+                await using var cmd = new SqlCommand(
+                    "SELECT Signature FROM [dbo].[Users] WHERE Username = @u", conn);
+                cmd.Parameters.AddWithValue("@u", windowsUsername);
+
+                var result = await cmd.ExecuteScalarAsync();
+                var sig = result?.ToString();
+
+                // Return null if empty or just whitespace
+                return string.IsNullOrWhiteSpace(sig) ? null : sig;
             }
             catch
             {
