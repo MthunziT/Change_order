@@ -7,6 +7,7 @@ namespace Change_order.Services
     {
         Task<ApplicationUser?> GetUserAsync(string windowsUsername);
         Task<string?> GetSignatureAsync(string windowsUsername);  // ← NEW
+        Task<List<string>> GetSystemsAsync();
     }
 
     public class UserService : IUserService
@@ -85,5 +86,26 @@ namespace Change_order.Services
             "developer" => UserRole.Developer,
             _ => UserRole.Developer
         };
+        public async Task<List<string>> GetSystemsAsync()
+        {
+            var systems = new List<string>();
+            try
+            {
+                await using var conn = new SqlConnection(_connString);
+                await conn.OpenAsync();
+                await using var cmd = new SqlCommand(
+                    "SELECT SystemName FROM Systems ORDER BY SystemName", conn);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var name = reader["SystemName"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(name))
+                        systems.Add(name);
+                }
+            }
+            catch { /* return empty list on failure */ }
+            return systems;
+        }
     }
+
 }

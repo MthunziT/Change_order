@@ -44,6 +44,10 @@
                     <span asp-validation-for="Name" class="field-error"></span>
                 </div>
 
+                @{
+                    var systems = ViewBag.Systems as List<string> ?? new List<string>();
+                }
+
                 <div class="form-group col-2">
                     <label asp-for="ApplicationName" style="font-weight:700">
                         Application / System *
@@ -54,19 +58,19 @@
                             onchange="handleAppChange()"
                             style="margin-bottom:8px">
 
-                        <option value="">Select application...</option>
+                        <option value="">— Select application —</option>
 
-                        <option value="Liquid">Liquid</option>
-                        <option value="Zebra">Zebra</option>
-                        <option value="VNS-Valuation Notice System">VNS-Valuation Notice System</option>
-                        <option value="Akon">Akon</option>
-                        <option value="Task Management">Task Management</option>
-                        <option value="infoUpdater">infoUpdater</option>
-                        <option value="Objections">Objections</option>
-                        <option value="GV Tool App">GV Tool App</option>
-                        <option value="Notices">Notices</option>
-                        <option value="Verification">Verification</option>
-                        <option value="SearchPacks">SearchPacks</option>
+                        @foreach (var sys in systems)
+                        {
+                            if (Model?.ApplicationName == sys)
+                            {
+                                <option value="@sys" selected>@sys</option>
+                            }
+                            else
+                            {
+                                <option value="@sys">@sys</option>
+                            }
+                        }
 
                         <option value="Other">Other</option>
                     </select>
@@ -78,8 +82,7 @@
                            style="display:none"
                            autocomplete="off" />
 
-                    <span asp-validation-for="ApplicationName"
-                          class="field-error"></span>
+                    <span asp-validation-for="ApplicationName" class="field-error"></span>
                 </div>
               
                 <div class="form-group col-1">
@@ -355,34 +358,57 @@
 
 
 @section Scripts {
-
     <script>
-
         function handleAppChange() {
-
             const dropdown = document.getElementById("appSelect");
-
-            const textbox = document.getElementById("appNameInput");
+            const textbox  = document.getElementById("appNameInput");
 
             if (dropdown.value === "Other") {
-
                 textbox.style.display = "block";
-
                 textbox.value = "";
-
+                textbox.setAttribute("name", "ApplicationName");
+                dropdown.removeAttribute("name");
                 textbox.focus();
-
-            }
-            else {
-
+            } else {
                 textbox.style.display = "none";
-
                 textbox.value = dropdown.value;
+                textbox.removeAttribute("name");
+                dropdown.setAttribute("name", "ApplicationName");
             }
         }
 
-    </script>
+        // On page load — restore selected value when editing/resubmitting
+        document.addEventListener("DOMContentLoaded", function () {
+            const dropdown    = document.getElementById("appSelect");
+            const textbox     = document.getElementById("appNameInput");
+            const currentVal  = textbox.value; // filled by asp-for binding
 
+            if (!currentVal) {
+                // New form — dropdown owns the name
+                dropdown.setAttribute("name", "ApplicationName");
+                textbox.removeAttribute("name");
+                return;
+            }
+
+            // Check if current value is one of the dropdown options
+            const match = Array.from(dropdown.options)
+                               .find(o => o.value === currentVal && o.value !== "Other");
+
+            if (match) {
+                // Known system — select it in dropdown
+                dropdown.value = currentVal;
+                dropdown.setAttribute("name", "ApplicationName");
+                textbox.removeAttribute("name");
+                textbox.style.display = "none";
+            } else {
+                // Custom "Other" value — show textbox
+                dropdown.value = "Other";
+                dropdown.removeAttribute("name");
+                textbox.setAttribute("name", "ApplicationName");
+                textbox.style.display = "block";
+            }
+        });
+    </script>
 }
 @* @section Scripts {
 

@@ -67,6 +67,7 @@
                         <th>Status</th>
                         <th>Deploy Date</th>
                         <th>Deployment</th>
+                        <th>Create New Version</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -90,7 +91,8 @@
                                 }
                             </td>
                             <td>
-                                <span class="version-badge">1.0</span>
+                                @cr.Version
+                                @* <span class="version-badge">1.0</span> *@
                             </td>
                             <td>@cr.Name</td>
                             <td>@cr.ApplicationName</td>
@@ -120,7 +122,7 @@
                                 {
                                     <span style="color:#ccc;margin:0 4px">|</span>
                                     <a href="/Dashboard/NewVersion/@cr.Id" class="btn-link"
-                                       style="color:#003366" title="Create new version">+ v@(NextVersion(cr.Version))</a>
+                                       style="color:#000000" title="Create new version">+ v@(NextVersion(cr.Version))</a>
                                 }
                             </td>
                         </tr>
@@ -156,10 +158,10 @@
 @functions {
     string NextVersion(string current)
     {
-        var parts = current.Split('.');
-        if (parts.Length == 2 && int.TryParse(parts[1], out int minor))
-            return $"1.{minor + 1}";
-        return "1.1";
+        if (int.TryParse(current, out int version))
+            return (version + 1).ToString();
+
+        return "2";
     }
 }
 

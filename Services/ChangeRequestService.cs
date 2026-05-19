@@ -52,15 +52,17 @@ namespace Change_order.Services
 
         private static string GetApplicationPrefix(string applicationName)
         {
+            // Known fixed prefixes — everything else auto-generates
             return applicationName.Trim().ToLower() switch
             {
                 "liquid" => "LI",
                 "zebra" => "ZB",
-                "vnsvaluationnoticesystem" => "VNS",
+                "vns-valuation notice system" => "VNS",
                 "akon" => "AK",
-                "taskmanagement" => "TM",
-                "infoupdate" => "IU",
-                "gvtool" => "GV",
+                "task management" => "TM",
+                "infoupdater" => "IU",
+                "objections" => "OB",
+                "gv tool app" => "GV",
                 "notices" => "NT",
                 "verification" => "VR",
                 "searchpacks" => "SP",
@@ -170,6 +172,7 @@ namespace Change_order.Services
                         .SetPadding(3)
                         .Add(new Paragraph(v).SetFont(bodyFont).SetFontSize(7.5f).SetFontColor(black)));
                 }
+                VRow("Version No:", cr.Version.ToString());
                 VRow("Version Date:", cr.DateSubmitted.ToString("dd/MM/yyyy"));
                 VRow("Project Name:", cr.ApplicationName.ToString());
                 vCell.Add(vt);
@@ -357,28 +360,19 @@ namespace Change_order.Services
             bool isRejected = cr.Status == ChangeRequestStatus.Rejected;
             bool isWithChanges = cr.Status == ChangeRequestStatus.PendingApproval;
 
-            // Status label row
-            var statusLT = new Table(1).UseAllAvailableWidth().SetMarginBottom(0);
-            statusLT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
-                .SetBackgroundColor(labelBg).SetPadding(4)
-                .Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
-            doc.Add(statusLT);
-
-            // Checkboxes row
-            var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 }))
-                .UseAllAvailableWidth();
+            var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 })).UseAllAvailableWidth();
             void Chk(bool ticked, string label)
             {
                 chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .SetTextAlignment(TextAlignment.CENTER)
-                    .Add(new Paragraph(ticked ? "\u2611" : "\u2610")
-                        .SetFont(boldFont).SetFontSize(11f)));
+                    .Add(new Paragraph(ticked ? "\u2611" : "\u2610").SetFont(boldFont).SetFontSize(11f)));
                 chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .Add(new Paragraph(label).SetFont(bodyFont).SetFontSize(8.5f)));
             }
-            Chk(isFullyApproved, "Approved as Requested");   
-            Chk(isWithChanges, "Approved with Changes");   
-            Chk(isRejected, "Rejected");                
+            Chk(isFullyApproved, "Approved as Requested");
+            Chk(isWithChanges, "Approved with Changes");
+            Chk(isRejected, "Rejected");
+            doc.Add(chkT);
 
             // ── Fetch signatures from UserManagement DB ───────────────────
             var m1Sig = cr.Manager1UserId != null

@@ -42,8 +42,11 @@ namespace Change_order.Controllers
         }
 
         // ── GET Create ────────────────────────────────────────────────────
-        public IActionResult Create() =>
-            View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7), Version = "1.0" });
+        public async Task<IActionResult> Create()
+        {
+            ViewBag.Systems = await _userService.GetSystemsAsync();
+            return View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7), Version = "1.0" });
+        }
 
         // ── POST Create ───────────────────────────────────────────────────
         [HttpPost]
@@ -58,10 +61,14 @@ namespace Change_order.Controllers
             ModelState.Remove("GroupKey");
             ModelState.Remove("Version");
 
-            if (!ModelState.IsValid) return View(model);
+            // ── PLACEMENT 1: ModelState invalid ──────────────────────────────
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Systems = await _userService.GetSystemsAsync();
+                return View(model);
+            }
 
-            // ── Duplicate check: same Name + Application ──────────────────
-            // Only check when this is NOT already a pre-tagged new version
+            // ── Duplicate check: same Name + Application ──────────────────────
             if (string.IsNullOrEmpty(model.GroupKey))
             {
                 var existing = await _db.ChangeRequests
@@ -71,29 +78,26 @@ namespace Change_order.Controllers
                     .OrderByDescending(r => r.Id)
                     .FirstOrDefaultAsync();
 
+                // ── PLACEMENT 2: Duplicate found ──────────────────────────────
                 if (existing != null)
                 {
-                    // Return to form with a warning — let the user decide
+                    ViewBag.Systems = await _userService.GetSystemsAsync();
                     TempData["DuplicateWarning"] =
                         $"A CR with the same name and application already exists ({existing.CRId} v{existing.Version}). " +
                         $"Use '+ New Version' on the dashboard if you want to revise it, or continue to create a separate CR.";
                     ModelState.AddModelError(string.Empty,
                         $"Duplicate detected: {existing.CRId} (v{existing.Version}) already exists for '{model.Name}' / '{model.ApplicationName}'. " +
                         "Click Submit again to create a separate CR, or go back to the Dashboard to create a new version.");
-                    // We still return the view — user can choose to resubmit anyway
                     return View(model);
                 }
             }
 
-            // ── Assign version and group key ──────────────────────────────
+            // ── Assign version and group key ──────────────────────────────────
             if (string.IsNullOrEmpty(model.Version)) model.Version = "1.0";
             if (string.IsNullOrEmpty(model.GroupKey))
                 model.GroupKey = $"{model.Name}|{model.ApplicationName}";
 
-            // Generate CRId (includes version suffix for non-1.0 versions)
-            //model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName);
             model.CRId = await _crService.GenerateCRIdAsync(model.ApplicationName.ToString());
-
             model.DeveloperUserId = user.WindowsUsername;
             model.DeveloperName = user.FullName;
             model.DateSubmitted = Now();
@@ -232,20 +236,6 @@ namespace Change_order.Controllers
 
             return RedirectToAction("Details", new { id = model.ChangeRequestId });
         }
-        //public async Task<string?> GetSignatureAsync(string windowsUsername)
-        //{
-        //    try
-        //    {
-        //        await using var conn = new SqlConnection(_connString);
-        //        await conn.OpenAsync();
-        //        await using var cmd = new SqlCommand(
-        //            "SELECT Signature FROM Users WHERE Username = @u", conn);
-        //        cmd.Parameters.AddWithValue("@u", windowsUsername);
-        //        var result = await cmd.ExecuteScalarAsync();
-        //        return result?.ToString();
-        //    }
-        //    catch { return null; }
-        //}
 
         // ── GET: Edit before resubmit ─────────────────────────────────────────
         public async Task<IActionResult> EditResubmit(int id)
@@ -266,6 +256,7 @@ namespace Change_order.Controllers
 
             ViewBag.IsResubmit = true;
             ViewBag.PendingComment = cr.Manager1Comments ?? cr.Manager2Comments;
+            ViewBag.Systems = await _userService.GetSystemsAsync();
             return View("Create", cr);
         }
 
@@ -329,15 +320,17 @@ namespace Change_order.Controllers
                 return RedirectToAction("Details", new { id = model.Id });
             }
 
+            // ── PLACEMENT: DeveloperResponse is empty — return form with all ViewBag data ──
             if (string.IsNullOrWhiteSpace(DeveloperResponse))
             {
                 TempData["Error"] = "A response comment is required before resubmitting.";
+                ViewBag.Systems = await _userService.GetSystemsAsync();
                 ViewBag.IsResubmit = true;
                 ViewBag.PendingComment = cr.Manager1Comments ?? cr.Manager2Comments;
                 return View("Create", model);
             }
 
-            // Update editable fields
+            // ── Update editable fields ────────────────────────────────────────
             cr.Name = model.Name;
             cr.ApplicationName = model.ApplicationName;
             cr.Description = model.Description;
@@ -369,7 +362,7 @@ namespace Change_order.Controllers
             cr.TestPlan = model.TestPlan;
             cr.RollbackPlan = model.RollbackPlan;
 
-            // Append developer response
+            // ── Append developer response to manager comment ──────────────────
             cr.Manager1Comments = string.IsNullOrEmpty(cr.Manager1Comments)
                 ? $"Developer response: {DeveloperResponse}"
                 : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";

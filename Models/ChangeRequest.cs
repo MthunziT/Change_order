@@ -208,21 +208,4 @@ namespace Change_order.Models
         Production,
         UAT
     }
-    //public enum ApplicationType
-    //{
-    //    Liquid,
-    //    Zebra,
-    //    [Display(Name = "VNS Valuation Notice System")]
-    //    VNSValuationNoticeSystem,
-    //    Akon,
-    //    [Display(Name = "Task Management")]
-    //    TaskManagement,
-    //    infoUpdate,
-    //    [Display(Name = "GV Tool App")]
-    //    GVTool,
-    //    Notices,
-    //    Verification,
-    //    SearchPacks,
-    //    Other
-    //}
 }

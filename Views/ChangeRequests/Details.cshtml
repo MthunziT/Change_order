@@ -403,15 +403,15 @@
         <!-- ══ APPROVE / REJECT ══ -->
        @if (canApprove)
 {
-    <div class="detail-section card-action" style="border:2px solid #e6b000;margin-bottom:16px">
-        <h3 class="detail-section-title">
+    <div class="detail-section card-action" style="border:2px solid #e6b000;margin-bottom:16px;padding:16px">
+        <h3 class="detail-section-title" style="margin-bottom:16px">
             @if (canApproveM1) { <span>Manager 1 — Your Decision</span> }
             else               { <span>Manager 2 — Your Final Decision</span> }
         </h3>
 
         @if (Model.Status == ChangeRequestStatus.PendingApproval)
         {
-            <div style="background:#ede9fe;border:1px solid #d9d9d9;border-radius:8px;
+            <div style="background:#ede9fe;border:1px solid #6d28d9;border-radius:8px;
                         padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
                 ⏳ <strong>This CR is awaiting developer action.</strong>
                 The developer has been asked to provide additional information before approval can proceed.
@@ -424,7 +424,7 @@
 
         @if (canApproveM2 && Model.Manager1ApprovedAt.HasValue)
         {
-            <div style="background:#f0fdf4;border:1px solid #d9d9d9;border-radius:8px;
+            <div style="background:#f0fdf4;border:1px solid #16a34a;border-radius:8px;
                         padding:12px 16px;margin-bottom:16px;font-size:0.875rem">
                 ✅ <strong>Manager 1 (@Model.Manager1Name)</strong> approved on
                 @Model.Manager1ApprovedAt?.ToString("dd/MM/yyyy HH:mm")
@@ -433,58 +433,81 @@
             </div>
         }
 
-        <!-- Shared comments textarea -->
-        <div class="form-group" style="margin-bottom:12px">
-            <label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
-                          letter-spacing:0.07em;color:#d9d9d9;display:block;margin-bottom:6px">
+        <!-- ── ONE shared comment field for all three actions ── -->
+        <div style="margin-bottom:16px">
+            <label for="sharedComments"
+                   style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                          letter-spacing:0.07em;color:#374151;display:block;margin-bottom:6px">
                 Comments
-                <span id="commentRequired" style="color:#d9d9d9;display:none"> * required for Pending Approval</span>
+                <span style="font-weight:400;text-transform:none;letter-spacing:0;
+                             color:#6b7280;font-size:0.75rem">
+                    — optional for Approve &nbsp;·&nbsp; required for Pending Approval &amp; Reject
+                </span>
             </label>
-            <textarea id="sharedComments" class="form-input" rows="3"
-                      placeholder="Add comments..."></textarea>
+            <textarea id="sharedComments" rows="3" class="form-input"
+                      placeholder="Approve: add optional comment  |  Pending Approval: describe what is needed from the developer  |  Reject: state the reason for rejection"
+                      oninput="clearCommentError()"></textarea>
+            <span id="commentError"
+                  style="display:none;color:#dc3545;font-size:0.75rem;margin-top:4px;display:none">
+                ⚠ A comment is required for this action.
+            </span>
         </div>
 
-        <!-- Three action buttons -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <!-- ── Three action buttons, all in one row ── -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
 
-            <!-- ✓ APPROVE -->
-            <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post" style="flex:1;min-width:120px">
+            <!-- ✓ APPROVE — comment optional -->
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval"
+                  method="post" style="flex:1;min-width:110px"
+                  onsubmit="syncAll()">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
                 <input type="hidden" name="CRId"               value="@Model.CRId" />
                 <input type="hidden" name="Approved"           value="true" />
                 <input type="hidden" name="SetPendingApproval" value="false" />
-                <input type="hidden" name="Comments" id="approveComments" value="" />
-                <button type="submit" class="btn-approve" style="width:100%;padding:12px;font-size:0.9rem"
-                        onclick="document.getElementById('approveComments').value = document.getElementById('sharedComments').value">
+                <input type="hidden" name="Comments"           id="approveComments" />
+                <button type="submit" class="btn-approve"
+                        style="width:100%;padding:12px;font-size:0.9rem">
                     ✓ Approve
                 </button>
             </form>
 
-            <!-- ⏳ PENDING APPROVAL -->
-            <form asp-controller="ChangeRequests" asp-action="ProcessApproval" method="post"
-                  style="flex:1;min-width:140px" id="pendingForm"
-                  onsubmit="return validatePendingComment()">
+            <!-- ⏳ PENDING APPROVAL — comment required -->
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval"
+                  method="post" style="flex:1;min-width:150px"
+                  onsubmit="return requireComment(this)">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
                 <input type="hidden" name="CRId"               value="@Model.CRId" />
                 <input type="hidden" name="Approved"           value="false" />
                 <input type="hidden" name="SetPendingApproval" value="true" />
-                <input type="hidden" name="Comments" id="pendingComments" value="" />
-                <button type="submit" class="btn-pending" style="width:100%;padding:12px;font-size:0.9rem"
-                        onclick="document.getElementById('pendingComments').value = document.getElementById('sharedComments').value;
-                                 document.getElementById('commentRequired').style.display='inline'">
+                <input type="hidden" name="Comments"           class="pendingInput" />
+                <button type="submit" class="btn-pending"
+                        style="width:100%;padding:12px;font-size:0.9rem">
                     ⏳ Pending Approval
                 </button>
             </form>
 
-            <!-- ✕ REJECT -->
-            <button type="button" id="showRejectBtn" class="btn-reject"
-                    style="flex:1;min-width:100px;padding:12px;font-size:0.9rem"
-                    onclick="document.getElementById('rejectPanel').style.display='block';this.style.display='none'">
-                ✕ Reject
-            </button>
+            <!-- ✕ REJECT — comment required -->
+            <form asp-controller="ChangeRequests" asp-action="ProcessApproval"
+                  method="post" style="flex:1;min-width:100px"
+                  onsubmit="return requireComment(this)">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ChangeRequestId"    value="@Model.Id" />
+                <input type="hidden" name="CRId"               value="@Model.CRId" />
+                <input type="hidden" name="Approved"           value="false" />
+                <input type="hidden" name="SetPendingApproval" value="false" />
+                <input type="hidden" name="RejectionReason"    class="rejectInput" />
+                <input type="hidden" name="Comments"           class="rejectCommentInput" />
+                <button type="submit" class="btn-reject"
+                        style="width:100%;padding:12px;font-size:0.9rem">
+                    ✕ Reject
+                </button>
+            </form>
+
         </div>
+    </div>
+} 
 
         <!-- REJECT panel -->
         <div id="rejectPanel" style="display:none;background:#fff5f5;border:2px solid #d9d9d9;
@@ -657,17 +680,42 @@
 
 </div>
 
-@section Scripts{
+@section Scripts {
 <script>
-function validatePendingComment() {
-    const comment = document.getElementById('sharedComments').value.trim();
-    if (!comment) {
-        alert('A comment is required when setting status to Pending Approval. Please describe what additional information is needed from the developer.');
-        document.getElementById('sharedComments').focus();
-        return false;
+    // Sync the single textarea value into all hidden inputs
+    function syncAll() {
+        const val = document.getElementById('sharedComments').value.trim();
+        document.getElementById('approveComments').value = val;
+        document.querySelectorAll('.pendingInput').forEach(i => i.value = val);
+        document.querySelectorAll('.rejectInput').forEach(i => i.value = val);
+        document.querySelectorAll('.rejectCommentInput').forEach(i => i.value = val);
     }
-    document.getElementById('pendingComments').value = comment;
-    return true;
-}
+
+    // Validate comment is present — used by Pending Approval and Reject
+    function requireComment(form) {
+        const val = document.getElementById('sharedComments').value.trim();
+        const err = document.getElementById('commentError');
+
+        if (!val) {
+            err.style.display = 'block';
+            document.getElementById('sharedComments').style.borderColor = '#dc3545';
+            document.getElementById('sharedComments').focus();
+            return false;
+        }
+
+        syncAll();
+        err.style.display = 'none';
+        document.getElementById('sharedComments').style.borderColor = '';
+        return true;
+    }
+
+    // Clear error state when user starts typing
+    function clearCommentError() {
+        const val = document.getElementById('sharedComments').value.trim();
+        if (val) {
+            document.getElementById('commentError').style.display = 'none';
+            document.getElementById('sharedComments').style.borderColor = '';
+        }
+    }
 </script>
 }
