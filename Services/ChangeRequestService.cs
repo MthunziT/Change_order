@@ -355,20 +355,37 @@ namespace Change_order.Services
             // ── APPROVALS ────────────────────────────────────────────────────
             SectionBar("Approvals");
 
-            bool isFullyApproved = cr.Status == ChangeRequestStatus.Manager2Approved
-                      || cr.Status == ChangeRequestStatus.Deployed;
-            bool isRejected = cr.Status == ChangeRequestStatus.Rejected;
-            bool isWithChanges = cr.Status == ChangeRequestStatus.PendingApproval;
+            bool isFullyApproved = (cr.Status == ChangeRequestStatus.Manager2Approved
+                                 || cr.Status == ChangeRequestStatus.Deployed)
+                                 && !cr.WasResubmitted;
 
-            var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 })).UseAllAvailableWidth();
+            bool isWithChanges = (cr.Status == ChangeRequestStatus.Manager2Approved
+                               || cr.Status == ChangeRequestStatus.Deployed)
+                               && cr.WasResubmitted;
+
+            bool isRejected = cr.Status == ChangeRequestStatus.Rejected;
+
+            // ── Status label row ─────────────────────────────────────────────────
+            var statusLT = new Table(1).UseAllAvailableWidth().SetMarginBottom(0);
+            statusLT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+                .SetBackgroundColor(labelBg).SetPadding(4)
+                .Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
+            doc.Add(statusLT);
+
+            // ── Checkboxes row ────────────────────────────────────────────────────
+            var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 }))
+                .UseAllAvailableWidth();
+
             void Chk(bool ticked, string label)
             {
                 chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .SetTextAlignment(TextAlignment.CENTER)
-                    .Add(new Paragraph(ticked ? "\u2611" : "\u2610").SetFont(boldFont).SetFontSize(11f)));
+                    .Add(new Paragraph(ticked ? "\u2611" : "\u2610")
+                        .SetFont(boldFont).SetFontSize(11f)));
                 chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .Add(new Paragraph(label).SetFont(bodyFont).SetFontSize(8.5f)));
             }
+
             Chk(isFullyApproved, "Approved as Requested");
             Chk(isWithChanges, "Approved with Changes");
             Chk(isRejected, "Rejected");
@@ -524,15 +541,16 @@ namespace Change_order.Services
             statusFinal.AddCell(new Cell().SetBackgroundColor(labelBg).SetBorder(new SolidBorder(borderCol, 0.5f))
                 .SetPadding(5).Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
             statusFinal.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(5)
-                .Add(new Paragraph(cr.Status switch
-                {
-                    ChangeRequestStatus.Deployed => "Successfully Deployed",
-                    ChangeRequestStatus.Manager2Approved => $"Ready for {cr.Environment} Deployment",
-                    ChangeRequestStatus.Manager1Approved => "Awaiting Manager 2 Approval",
-                    ChangeRequestStatus.Rejected => "Rejected",
-                    _ => "Pending Approval"
-                }).SetFont(boldFont).SetFontSize(8.5f)));
-            doc.Add(statusFinal);
+            .Add(new Paragraph(cr.Status switch
+            {
+                ChangeRequestStatus.Deployed when cr.WasResubmitted => "Successfully Deployed (Approved with Changes)",
+                ChangeRequestStatus.Deployed => "Successfully Deployed",
+                ChangeRequestStatus.Manager2Approved when cr.WasResubmitted => $"Ready for {cr.Environment} Deployment (Approved with Changes)",
+                ChangeRequestStatus.Manager2Approved => $"Ready for {cr.Environment} Deployment",
+                ChangeRequestStatus.Manager1Approved => "Awaiting Manager 2 Approval",
+                ChangeRequestStatus.Rejected => "Rejected",
+                _ => "Pending Approval"
+            }).SetFont(boldFont).SetFontSize(8.5f)));
 
             Footer(5);
             doc.Close();

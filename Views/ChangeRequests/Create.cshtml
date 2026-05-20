@@ -165,7 +165,7 @@
                 </div>
 
                 <div class="form-group col-2">
-                    <label asp-for="ImpactIfNotDone" style="font-weight:700">
+                    <label asp-for="ImpactIfNotDone" style="font-weight:700">  
                         Impact of Not Making the Change
                     </label>
                     <textarea asp-for="ImpactIfNotDone" class="form-input" rows="3"
@@ -410,35 +410,3 @@
         });
     </script>
 }
-@* @section Scripts {
-
-    <script>
-
-        function handleAppChange() {
-
-            const dropdown = document.getElementById("appSelect");
-
-            const textbox = document.getElementById("otherAppInput");
-
-            const selectedText =
-                dropdown.options[dropdown.selectedIndex].text;
-
-            if (selectedText === "Other") {
-
-                textbox.style.display = "block";
-
-                textbox.focus();
-
-            }
-            else {
-
-                textbox.style.display = "none";
-
-                textbox.value = "";
-
-            }
-        }
-
-    </script>
-
-} *@

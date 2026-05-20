@@ -290,8 +290,9 @@ namespace Change_order.Controllers
                 ? $"Developer response: {DeveloperResponse}"
                 : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";
 
+            cr.WasResubmitted = true;
             cr.Status = ChangeRequestStatus.Pending;
-
+     
             await _db.SaveChangesAsync();
 
             var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
@@ -367,8 +368,9 @@ namespace Change_order.Controllers
                 ? $"Developer response: {DeveloperResponse}"
                 : $"{cr.Manager1Comments}\n\nDeveloper response ({Now():dd/MM/yyyy HH:mm}): {DeveloperResponse}";
 
+            // ── Mark that this CR was resubmitted after pending approval ─────────
+            cr.WasResubmitted = true;
             cr.Status = ChangeRequestStatus.Pending;
-
             await _db.SaveChangesAsync();
 
             var developer = await _userService.GetUserAsync(cr.DeveloperUserId);
@@ -377,7 +379,7 @@ namespace Change_order.Controllers
             TempData["Success"] = $"Change Request {cr.CRId} updated and resubmitted. Manager 1 has been notified.";
             return RedirectToAction("Details", new { id = cr.Id });
         }
-        // ── MarkDeployed ──────────────────────────────────────────────────
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkDeployed(int id)
@@ -401,7 +403,6 @@ namespace Change_order.Controllers
             return RedirectToAction("Details", new { id });
         }
 
-        // ── DownloadPdf ───────────────────────────────────────────────────
         public async Task<IActionResult> DownloadPdf(int id)
         {
             var cr = await _db.ChangeRequests.FindAsync(id);
@@ -417,7 +418,6 @@ namespace Change_order.Controllers
             return File(pdfBytes, "application/pdf", $"{cr.CRId}_v{cr.Version}_ChangeRequest.pdf");
         }
 
-        // ── Jenkins API ───────────────────────────────────────────────────
         [AllowAnonymous]
         [HttpGet("/api/cr/check/{crId}")]
         public async Task<IActionResult> CheckDeployment(string crId)

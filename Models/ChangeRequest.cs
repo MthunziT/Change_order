@@ -116,6 +116,7 @@ namespace Change_order.Models
         [Display(Name = "Recommended Implementation Start Date")]
         [DataType(DataType.Date)]
         public DateTime DeploymentDate { get; set; }
+        public bool WasResubmitted {  get; set; }
 
         [Display(Name = "Recommended Implementation Completion Date")]
         [DataType(DataType.Date)]
