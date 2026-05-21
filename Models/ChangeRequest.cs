@@ -50,9 +50,9 @@ namespace Change_order.Models
         [Display(Name = "Impact Description")]
         public string? ImpactDescription { get; set; }
         // Versioning
-        public string Version { get; set; } = "1.0";          // e.g. "1.0", "1.1", "1.2"
-        public int? ParentId { get; set; }                      // null = original, set = child version
-        public string GroupKey { get; set; } = string.Empty;   // Name + ApplicationName combined key
+        public string Version { get; set; } = "1";
+        public int? ParentId { get; set; }                      
+        public string GroupKey { get; set; } = string.Empty;  
 
         [StringLength(1000)]
         [Display(Name = "Impact if Not Making the Change")]

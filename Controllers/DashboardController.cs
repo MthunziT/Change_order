@@ -41,7 +41,6 @@ namespace Change_order.Controllers
 
             var requests = await query.OrderByDescending(r => r.DateSubmitted).ToListAsync();
 
-            // Group by GroupKey — each group is one CR family (v1.0, v1.1...)
             var grouped = requests
                 .GroupBy(r => string.IsNullOrEmpty(r.GroupKey) ? r.CRId : r.GroupKey)
                 .Select(g => new CRGroup
@@ -95,6 +94,7 @@ namespace Change_order.Controllers
                 Priority = original.Priority,
                 Category = original.Category,
                 Impact = original.Impact,
+                AreasImpacted=original.AreasImpacted,
                 ImpactDescription = original.ImpactDescription,
                 ImpactIfNotDone = original.ImpactIfNotDone,
                 ImpactTimeline = original.ImpactTimeline,

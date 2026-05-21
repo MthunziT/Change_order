@@ -26,9 +26,9 @@ namespace Change_order.Services
     public class ChangeRequestService : IChangeRequestService
     {
         private readonly ChangeOrderDbContext _db;
-        private readonly IUserService _userService;  // ← ADDED
+        private readonly IUserService _userService; 
 
-        public ChangeRequestService(ChangeOrderDbContext db, IUserService userService)  // ← ADDED
+        public ChangeRequestService(ChangeOrderDbContext db, IUserService userService)
         {
             _db = db;
             _userService = userService;

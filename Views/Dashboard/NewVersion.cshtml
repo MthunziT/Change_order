@@ -86,8 +86,6 @@
                             <select asp-for="Environment"
                                     class="form-input">
 
-                                @* <option value="Development">Development</option>
-                                <option value="QA">QA</option> *@
                                 <option value="UAT">UAT</option>
                                 <option value="Production">Production</option>
 
@@ -207,8 +205,194 @@
                 </table>
 
             </div>
+        
+
 
             <!-- SECTION 3 -->
+            <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+
+                <div style="@SH">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                        Change Request Impact & Proposed Response
+                    </h3>
+                </div>
+
+                <table style=" @SH">
+                    <tr>
+                        <td style="@LH">Impact of Not Making the Change</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ImpactIfNotDone"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Timeline of Impact Occurrence</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ImpactIfNotDone"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Recommended Strategy</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="RecommendedStrategy"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Cost/Resource/Time Requirements</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="CostResourceTime"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Expected Outcome</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ExpectedOutcome"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                   
+                </table>
+            </div>
+
+
+            <!-- SECTION 4 -->
+            <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
+
+                <div style="@SH">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:700">
+                        Detailed Change Request Assessment
+                    </h3>
+                </div>
+
+                <table style="@SH">
+
+                    <tr>
+                        <td style="@LH">Change Request Assessment Assigned To</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="AssessmentAssignedTo"
+                                   row="3"
+                                   class="form-input"
+                                   style="width:100%"></textarea>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="@LH">Tasks Affected</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="TasksAffected"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="@LH">Stakeholders Affected</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="StakeholdersAffected"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Options Considered</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="OptionsConsidered"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Recommended Actions & Action Plan</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="RecommendedActions"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Impact on Scope / Quality / Performance</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ImpactOnScope"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Impact on Schedule</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="ImpactOnSchedule"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Additional Resources Required</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="AdditionalResources"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="@LH">Additional Cost</td>
+
+                        <td style="@VH">
+                            <textarea asp-for="AdditionalCost"
+                                      row="3"
+                                      class="form-input"
+                                      style="width:100%"></textarea>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+            <!-- SECTION 5 -->
             <div class="form-section" style="border:1px solid #a6a6a6;margin-bottom:16px">
 
                 <div style="@SH">
@@ -317,7 +501,7 @@
                     <dd>@Model.Status</dd>
 
                     <dt>Developer</dt>
-                    <dd>@Model.DeveloperName</dd>
+                    <dd>@Model.AssessmentAssignedTo</dd>
 
                 </dl>
 

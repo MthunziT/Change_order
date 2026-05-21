@@ -45,7 +45,7 @@ namespace Change_order.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Systems = await _userService.GetSystemsAsync();
-            return View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7), Version = "1.0" });
+            return View(new ChangeRequest { DeploymentDate = DateTime.Today.AddDays(7), Version = "1" });
         }
 
         // ── POST Create ───────────────────────────────────────────────────
@@ -93,7 +93,7 @@ namespace Change_order.Controllers
             }
 
             // ── Assign version and group key ──────────────────────────────────
-            if (string.IsNullOrEmpty(model.Version)) model.Version = "1.0";
+            if (string.IsNullOrEmpty(model.Version)) model.Version = "1";
             if (string.IsNullOrEmpty(model.GroupKey))
                 model.GroupKey = $"{model.Name}|{model.ApplicationName}";
 
@@ -108,7 +108,7 @@ namespace Change_order.Controllers
 
             _ = _emailService.SendSubmittedAsync(model, user.Email);
 
-            var versionLabel = model.Version != "1.0" ? $" (v{model.Version})" : "";
+            var versionLabel = model.Version != "1" ? $" (v{model.Version})" : "";
             TempData["Success"] = $"Change Request {model.CRId}{versionLabel} submitted. Manager 1 has been notified.";
             return RedirectToAction("Index", "Dashboard");
         }
