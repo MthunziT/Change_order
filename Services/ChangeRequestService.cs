@@ -352,37 +352,40 @@ namespace Change_order.Services
 
             doc.Add(new Paragraph(" ").SetFontSize(6));
 
-            // ── APPROVALS ────────────────────────────────────────────────────
+            // ── APPROVALS ────────────────────────────────────────────────────────
             SectionBar("Approvals");
 
             bool isFullyApproved = (cr.Status == ChangeRequestStatus.Manager2Approved
-                                 || cr.Status == ChangeRequestStatus.Deployed)
-                                 && !cr.WasResubmitted;
+                     || cr.Status == ChangeRequestStatus.Deployed)
+                     && !cr.WasResubmitted;
 
             bool isWithChanges = (cr.Status == ChangeRequestStatus.Manager2Approved
-                               || cr.Status == ChangeRequestStatus.Deployed)
-                               && cr.WasResubmitted;
+                                 || cr.Status == ChangeRequestStatus.Deployed)
+                                 && cr.WasResubmitted;
 
             bool isRejected = cr.Status == ChangeRequestStatus.Rejected;
 
-            // ── Status label row ─────────────────────────────────────────────────
+            // Status label row
             var statusLT = new Table(1).UseAllAvailableWidth().SetMarginBottom(0);
-            statusLT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f))
+            statusLT.AddCell(new Cell()
+                .SetBorder(new SolidBorder(borderCol, 0.5f))
                 .SetBackgroundColor(labelBg).SetPadding(4)
                 .Add(new Paragraph("Status").SetFont(boldFont).SetFontSize(8.5f)));
             doc.Add(statusLT);
 
-            // ── Checkboxes row ────────────────────────────────────────────────────
+            // Checkboxes row
             var chkT = new Table(UnitValue.CreatePercentArray(new float[] { 5, 28, 5, 30, 5, 27 }))
                 .UseAllAvailableWidth();
 
             void Chk(bool ticked, string label)
             {
-                chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
+                chkT.AddCell(new Cell()
+                    .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .SetTextAlignment(TextAlignment.CENTER)
                     .Add(new Paragraph(ticked ? "\u2611" : "\u2610")
                         .SetFont(boldFont).SetFontSize(11f)));
-                chkT.AddCell(new Cell().SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
+                chkT.AddCell(new Cell()
+                    .SetBorder(new SolidBorder(borderCol, 0.5f)).SetPadding(4)
                     .Add(new Paragraph(label).SetFont(bodyFont).SetFontSize(8.5f)));
             }
 

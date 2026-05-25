@@ -111,6 +111,7 @@ namespace Change_order.Controllers
                 AdditionalResources = original.AdditionalResources,
                 AdditionalCost = original.AdditionalCost,
                 DeploymentDate = DateTime.Today.AddDays(7),
+                DeploymentEndDate=DateTime.Today.AddDays(8),
                 DeploymentWindow = original.DeploymentWindow,
                 Environment = original.Environment,
                 TestPlan = original.TestPlan,

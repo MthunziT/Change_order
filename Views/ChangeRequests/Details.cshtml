@@ -14,12 +14,14 @@
     bool canDownloadPdf  = Model.Status == ChangeRequestStatus.Manager2Approved
                         || Model.Status == ChangeRequestStatus.Deployed;
 
-    bool isFullyApproved  = (Model.Status == ChangeRequestStatus.Manager2Approved
-                          || Model.Status == ChangeRequestStatus.Deployed)
-                          && !Model.WasResubmitted;
-    bool isWithChanges    = (Model.Status == ChangeRequestStatus.Manager2Approved
-                          || Model.Status == ChangeRequestStatus.Deployed)
-                          && Model.WasResubmitted;
+    bool isFullyApproved = (Model.Status == ChangeRequestStatus.Manager2Approved
+                     || Model.Status == ChangeRequestStatus.Deployed)
+                     && !Model.WasResubmitted;
+
+    bool isWithChanges   = (Model.Status == ChangeRequestStatus.Manager2Approved
+                         || Model.Status == ChangeRequestStatus.Deployed)
+                         && Model.WasResubmitted;
+
     bool isRejectedStatus = Model.Status == ChangeRequestStatus.Rejected;
 
     string SH = "background:#d9d9d9;border-bottom:1px solid #a6a6a6;padding:8px 14px";
